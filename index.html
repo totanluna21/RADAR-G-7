@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
@@ -98,7 +97,6 @@
 <div class="corner c-br"></div>
 
 <!-- HEADER -->
-
 <header>
   <div class="radar" id="radarScope"></div>
   <div style="flex:1">
@@ -115,7 +113,6 @@
 </header>
 
 <!-- SEARCH -->
-
 <div class="search-bar">
   <div class="search-row">
     <span style="color:#00d4ff;font-size:14px;flex-shrink:0">🔍</span>
@@ -139,7 +136,6 @@
 </div>
 
 <!-- QUICK BUTTONS -->
-
 <div class="quick-btns">
   <button class="qbtn" onclick="quickAction('scan')">📡 Escanear mercado</button>
   <button class="qbtn" onclick="quickAction('pump')">🟢 Top pumps hoy</button>
@@ -150,7 +146,6 @@
 </div>
 
 <!-- CHAT -->
-
 <div class="chat" id="chat">
   <div class="chat-inner" id="chatInner">
     <!-- Welcome message -->
@@ -162,7 +157,6 @@
 </div>
 
 <!-- INPUT -->
-
 <div class="input-area">
   <div class="input-row">
     <div class="input-wrap">
@@ -364,11 +358,9 @@ function setLoading(val) {
 
 // ─── API CALL ───
 async function callAI(userMsg) {
-  const key = ANTHROPIC_KEY || window._ANTHROPIC_KEY || '';
-  if (!key) throw new Error('API key no configurada. Añade VITE_ANTHROPIC_KEY en Netlify.');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/.netlify/functions/ai', {
     method: 'POST',
-    headers: {'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
@@ -457,6 +449,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
-
 </body>
 </html>
