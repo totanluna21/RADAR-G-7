@@ -362,7 +362,7 @@ async function callAI(userMsg) {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1000,
       system: `Eres RADAR G-7, analista crypto de élite. Usa web_search para datos reales. Responde en español. ${KB}`,
       messages: [...messages, {role:'user',content:userMsg}],
