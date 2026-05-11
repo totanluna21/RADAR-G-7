@@ -8,116 +8,162 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
-body{height:100vh;background:#020b14;color:#c8e8ff;font-family:'Exo 2',sans-serif;display:flex;flex-direction:column;}
+body{height:100vh;background:#04080f;color:#e2f0ff;font-family:'Exo 2',sans-serif;display:flex;flex-direction:column;}
 ::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:#010810;}
-::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.25);border-radius:2px;}
+::-webkit-scrollbar-track{background:#02050a;}
+::-webkit-scrollbar-thumb{background:rgba(0,180,255,0.3);border-radius:2px;}
 input,textarea{outline:none;}
-input::placeholder,textarea::placeholder{color:#1a4060;}
+input::placeholder,textarea::placeholder{color:#1a3a55;}
 
-/* Header */
-.header{background:linear-gradient(180deg,#030f1c,rgba(2,11,20,0.97));border-bottom:1px solid rgba(0,212,255,0.12);padding:10px 15px;display:flex;align-items:center;gap:12px;flex-shrink:0;z-index:20;}
-.radar{position:relative;width:76px;height:76px;flex-shrink:0;}
-.r-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;}
-.r-sweep{position:absolute;top:50%;left:50%;width:38px;height:38px;transform-origin:0 0;animation:rSweep 3s linear infinite;background:conic-gradient(from 0deg,rgba(0,212,255,0.25) 0deg,transparent 50deg);border-radius:0 100% 0 0;}
-.r-dot{position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;background:#00d4ff;box-shadow:0 0 12px #00d4ff;transform:translate(-50%,-50%);}
-.r-blip{position:absolute;width:5px;height:5px;border-radius:50%;animation:bPop 3s ease-in-out infinite;}
-.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:20px;letter-spacing:4px;color:#00d4ff;animation:glow 3s ease-in-out infinite;}
-.logo-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a6080;letter-spacing:2px;margin-top:3px;}
-.badges{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
-.badge{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 7px;background:rgba(0,0,0,0.3);letter-spacing:1px;border:1px solid;}
+/* HEADER */
+.header{background:linear-gradient(180deg,#060e1c 0%,#04080f 100%);border-bottom:1px solid rgba(0,180,255,0.15);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;z-index:20;}
 
-/* Search */
-.search-area{background:rgba(0,6,18,0.96);border-bottom:1px solid rgba(0,212,255,0.1);padding:9px 14px;flex-shrink:0;z-index:15;}
+/* GLOBE RADAR */
+.globe{position:relative;width:88px;height:88px;flex-shrink:0;}
+.globe svg{width:88px;height:88px;}
+
+/* TITLE */
+.title-block{flex:1;}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:22px;letter-spacing:5px;background:linear-gradient(135deg,#00b4ff,#0066ff,#00ffcc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:titlePulse 4s ease-in-out infinite;}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a6080;letter-spacing:3px;margin-top:3px;}
+.badges{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;}
+.badge{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 8px;letter-spacing:1px;border-radius:2px;}
+
+/* SEARCH */
+.search-area{background:rgba(4,8,15,0.98);border-bottom:1px solid rgba(0,180,255,0.1);padding:9px 14px;flex-shrink:0;}
 .search-row{display:flex;gap:8px;align-items:center;}
-.search-input{flex:1;background:rgba(0,18,34,0.9);border:1px solid rgba(0,212,255,0.25);color:#c8e8ff;font-family:'Exo 2',sans-serif;font-size:13px;padding:9px 12px;}
-.btn-search{background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,150,200,0.15));border:1px solid rgba(0,212,255,0.5);color:#00d4ff;font-family:'Orbitron',monospace;font-size:10px;padding:0 16px;height:42px;cursor:pointer;letter-spacing:2px;white-space:nowrap;}
-.btn-search:disabled{background:rgba(0,212,255,0.03);border-color:rgba(0,212,255,0.1);color:#1a4060;cursor:not-allowed;}
-.quick-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;align-items:center;}
-.tag{background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.13);color:#3a7090;font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;cursor:pointer;transition:all .15s;}
-.tag:hover{color:#00d4ff;border-color:rgba(0,212,255,0.4);}
+.search-input{flex:1;background:rgba(0,20,40,0.9);border:1px solid rgba(0,180,255,0.2);color:#e2f0ff;font-family:'Exo 2',sans-serif;font-size:13px;padding:9px 12px;border-radius:3px;transition:border .2s;}
+.search-input:focus{border-color:rgba(0,180,255,0.5);}
+.btn-analyze{background:linear-gradient(135deg,#0066ff,#0044cc);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:10px;padding:0 18px;height:42px;cursor:pointer;letter-spacing:2px;border-radius:3px;white-space:nowrap;transition:all .2s;}
+.btn-analyze:hover{background:linear-gradient(135deg,#0080ff,#0055dd);}
+.btn-analyze:disabled{background:#112233;color:#224455;cursor:not-allowed;}
+.quick-tags{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;align-items:center;}
+.tag-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:#1a3a50;}
+.tag{background:rgba(0,100,200,0.08);border:1px solid rgba(0,150,255,0.15);color:#3a7090;font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;cursor:pointer;border-radius:2px;transition:all .15s;}
+.tag:hover{color:#00b4ff;border-color:rgba(0,180,255,0.4);background:rgba(0,100,200,0.15);}
 
-/* Quick buttons */
-.quick-btns{background:rgba(0,4,10,0.8);border-bottom:1px solid rgba(0,212,255,0.07);padding:7px 12px;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;z-index:10;}
-.qbtn{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);color:#4a8fa8;font-family:'Exo 2',sans-serif;font-size:10px;padding:5px 10px;cursor:pointer;transition:all .15s;}
-.qbtn:hover:not(:disabled){background:rgba(0,212,255,0.1);color:#00d4ff;}
-.qbtn:disabled{opacity:0.4;cursor:not-allowed;}
+/* QUICK BUTTONS */
+.quick-btns{background:rgba(2,5,12,0.95);border-bottom:1px solid rgba(0,120,255,0.08);padding:7px 12px;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
+.qbtn{background:rgba(0,60,120,0.15);border:1px solid rgba(0,120,255,0.18);color:#5a90c0;font-family:'Exo 2',sans-serif;font-size:10px;padding:5px 11px;cursor:pointer;border-radius:3px;transition:all .15s;}
+.qbtn:hover:not(:disabled){background:rgba(0,80,180,0.25);color:#00b4ff;border-color:rgba(0,180,255,0.35);}
+.qbtn:disabled{opacity:0.35;cursor:not-allowed;}
 
-/* CHAT — THIS IS THE KEY FIX */
+/* CHAT */
 .chat-wrapper{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
 .chat{flex:1;overflow-y:scroll;padding:14px 12px;-webkit-overflow-scrolling:touch;}
 .chat-inner{max-width:900px;margin:0 auto;padding-bottom:10px;}
 
-/* Messages */
-.msg{display:flex;margin-bottom:12px;animation:fadeUp 0.3s ease-out;}
+/* MESSAGES */
+.msg{display:flex;margin-bottom:13px;animation:fadeUp 0.3s ease-out;}
 .msg.user{justify-content:flex-end;}
 .msg.bot{justify-content:flex-start;}
-.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-.av.bot{background:linear-gradient(135deg,#001e2e,#003050);border:1px solid rgba(0,212,255,0.4);font-family:'Orbitron',monospace;font-size:7px;font-weight:700;color:#00d4ff;margin-right:7px;box-shadow:0 0 10px rgba(0,212,255,0.15);}
-.av.user{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.22);font-size:13px;margin-left:7px;}
-.bubble{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.65;}
-.bubble.user{background:linear-gradient(135deg,rgba(0,212,255,0.13),rgba(0,100,180,0.09));border:1px solid rgba(0,212,255,0.3);border-radius:12px 2px 12px 12px;max-width:72%;color:#c8e8ff;}
-.bubble.bot{background:linear-gradient(180deg,rgba(0,15,25,0.93),rgba(0,8,18,0.97));border:1px solid rgba(0,212,255,0.11);border-radius:2px 12px 12px 12px;max-width:88%;color:#b8d8e8;}
+.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.av.bot{background:linear-gradient(135deg,#001830,#002850);border:1px solid rgba(0,180,255,0.4);font-family:'Orbitron',monospace;font-size:7px;font-weight:700;color:#00b4ff;margin-right:8px;box-shadow:0 0 12px rgba(0,150,255,0.2);}
+.av.user{background:rgba(0,80,180,0.12);border:1px solid rgba(0,150,255,0.25);font-size:13px;margin-left:8px;}
+.bubble{border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.68;}
+.bubble.user{background:linear-gradient(135deg,rgba(0,80,180,0.18),rgba(0,60,150,0.12));border:1px solid rgba(0,150,255,0.25);border-radius:12px 2px 12px 12px;max-width:72%;color:#c8e8ff;}
+.bubble.bot{background:linear-gradient(180deg,rgba(0,10,24,0.95),rgba(0,6,18,0.98));border:1px solid rgba(0,120,255,0.12);border-radius:2px 12px 12px 12px;max-width:88%;color:#b0d0f0;}
 
-/* Signal styles */
-.sig-pump{display:inline-block;background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.55);color:#00ff88;padding:3px 12px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;margin:4px 0;border-radius:2px;animation:sPulse 2s infinite;}
-.sig-dump{display:inline-block;background:rgba(255,51,51,0.12);border:1px solid rgba(255,51,51,0.55);color:#ff4444;padding:3px 12px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;margin:4px 0;border-radius:2px;animation:sPulse 2s infinite;}
-.sig-alert{display:inline-block;background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.55);color:#ffcc00;padding:3px 12px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;margin:4px 0;border-radius:2px;}
-.sig-watch{display:inline-block;background:rgba(68,170,255,0.08);border:1px solid rgba(68,170,255,0.45);color:#44aaff;padding:3px 12px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;margin:4px 0;border-radius:2px;}
-.line-div{height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.28),transparent);margin:8px 0;}
-.line-sec{font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a8fa8;letter-spacing:1.5px;margin:8px 0 4px;border-left:2px solid rgba(0,212,255,0.35);padding-left:7px;}
-.line-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#00d4ff;letter-spacing:1.5px;margin:4px 0;}
-.line-bull{color:#00ff88;font-size:12px;margin:2px 0;font-weight:600;}
-.line-bear{color:#ff5555;font-size:12px;margin:2px 0;font-weight:600;}
-.line-arrow{color:#8ab8cc;font-size:12px;padding-left:11px;margin:2px 0;border-left:1px solid rgba(0,212,255,0.2);}
-.line-hist{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);padding:4px 9px;margin:3px 0;font-size:12px;color:#a8d8e8;border-radius:2px;}
-.line-conv{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:#ffcc00;margin:7px 0;}
-.line-disc{color:#336677;font-size:10px;margin-top:8px;font-family:'Share Tech Mono',monospace;}
-.line-circ{font-family:'Share Tech Mono',monospace;font-size:11px;color:#88ccdd;margin:3px 0;}
-.line-gap{height:4px;}
-.line-txt{font-size:13px;color:#b8d8e8;margin:1px 0;line-height:1.65;}
+/* SIGNAL BADGES */
+.sig-pump{display:inline-block;background:rgba(0,220,100,0.1);border:1px solid rgba(0,220,100,0.5);color:#00dc64;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;animation:sigPulse 2s infinite;}
+.sig-dump{display:inline-block;background:rgba(255,40,40,0.1);border:1px solid rgba(255,60,60,0.5);color:#ff4040;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;animation:sigPulse 2s infinite;}
+.sig-alert{display:inline-block;background:rgba(255,180,0,0.08);border:1px solid rgba(255,180,0,0.45);color:#ffb400;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;}
+.sig-watch{display:inline-block;background:rgba(0,150,255,0.08);border:1px solid rgba(0,150,255,0.4);color:#0096ff;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;}
+.line-div{height:1px;background:linear-gradient(90deg,transparent,rgba(0,150,255,0.25),transparent);margin:9px 0;}
+.line-sec{font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a6888;letter-spacing:1.5px;margin:9px 0 5px;border-left:2px solid rgba(0,150,255,0.3);padding-left:8px;}
+.line-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:#00b4ff;letter-spacing:1.5px;margin:4px 0;}
+.line-bull{color:#00dc64;font-size:12px;margin:3px 0;font-weight:600;}
+.line-bear{color:#ff5050;font-size:12px;margin:3px 0;font-weight:600;}
+.line-arrow{color:#7aacccc;font-size:12px;padding-left:12px;margin:2px 0;border-left:1px solid rgba(0,150,255,0.2);}
+.line-hist{background:rgba(0,100,200,0.06);border:1px solid rgba(0,150,255,0.12);padding:5px 10px;margin:4px 0;font-size:12px;color:#90c0e0;border-radius:3px;}
+.line-conv{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#ffb400;margin:8px 0;}
+.line-disc{color:#2a5a70;font-size:10px;margin-top:9px;font-family:'Share Tech Mono',monospace;}
+.line-circ{font-family:'Share Tech Mono',monospace;font-size:11px;color:#70aacc;margin:3px 0;}
+.line-gap{height:5px;}
+.line-txt{font-size:13px;color:#a0c8e8;margin:2px 0;line-height:1.68;}
 
-/* Loading */
-.loading-msg{display:flex;justify-content:flex-start;margin-bottom:12px;}
-.loading-bubble{background:linear-gradient(180deg,rgba(0,15,25,0.93),rgba(0,8,18,0.97));border:1px solid rgba(0,212,255,0.11);border-radius:2px 12px 12px 12px;padding:12px 16px;display:flex;align-items:center;gap:12px;}
-.spinner{width:24px;height:24px;border-radius:50%;border:2px solid rgba(0,212,255,0.15);border-top:2px solid #00d4ff;animation:spin 0.8s linear infinite;flex-shrink:0;}
-.loading-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:#00d4ff;letter-spacing:2px;}
-.loading-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a5a70;margin-top:3px;}
+/* LOADING */
+.loading-msg{display:flex;justify-content:flex-start;margin-bottom:13px;}
+.loading-bubble{background:linear-gradient(180deg,rgba(0,10,24,0.95),rgba(0,6,18,0.98));border:1px solid rgba(0,120,255,0.12);border-radius:2px 12px 12px 12px;padding:13px 18px;display:flex;align-items:center;gap:13px;}
+.spinner{width:26px;height:26px;border-radius:50%;border:2px solid rgba(0,150,255,0.15);border-top:2px solid #00b4ff;animation:spin 0.8s linear infinite;flex-shrink:0;}
+.loading-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:#00b4ff;letter-spacing:2px;}
+.loading-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a4060;margin-top:3px;}
 
-/* Input */
-.input-area{background:linear-gradient(0deg,#010810,rgba(1,8,16,0.97));border-top:1px solid rgba(0,212,255,0.12);padding:10px 12px;flex-shrink:0;z-index:20;}
+/* INPUT */
+.input-area{background:linear-gradient(0deg,#02050a,rgba(2,5,10,0.97));border-top:1px solid rgba(0,120,255,0.12);padding:10px 12px;flex-shrink:0;}
 .input-row{max-width:900px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;}
-.input-wrap{flex:1;background:rgba(0,18,34,0.9);border:1px solid rgba(0,212,255,0.18);}
-.input-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1a4a60;letter-spacing:2px;padding:4px 10px 0;}
-.input-wrap textarea{background:transparent;border:none;color:#c8e8ff;font-family:'Exo 2',sans-serif;font-size:13px;padding:6px 10px 8px;width:100%;resize:none;}
-.btn-scan{background:linear-gradient(135deg,rgba(0,212,255,0.18),rgba(0,150,200,0.12));border:1px solid rgba(0,212,255,0.45);color:#00d4ff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:0 14px;height:60px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:64px;flex-shrink:0;}
-.btn-scan:disabled{background:rgba(0,212,255,0.03);border-color:rgba(0,212,255,0.08);color:#1a4a60;cursor:not-allowed;}
-.footer-txt{max-width:900px;margin:4px auto 0;font-family:'Share Tech Mono',monospace;font-size:8px;color:#1a4060;text-align:right;}
+.input-wrap{flex:1;background:rgba(0,15,30,0.9);border:1px solid rgba(0,120,255,0.18);border-radius:4px;}
+.input-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1a4060;letter-spacing:2px;padding:4px 10px 0;}
+.input-wrap textarea{background:transparent;border:none;color:#e2f0ff;font-family:'Exo 2',sans-serif;font-size:13px;padding:6px 10px 8px;width:100%;resize:none;}
+.btn-scan{background:linear-gradient(135deg,#0055cc,#003399);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:0 14px;height:62px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:66px;flex-shrink:0;border-radius:4px;transition:all .2s;}
+.btn-scan:hover{background:linear-gradient(135deg,#0066ee,#0044bb);}
+.btn-scan:disabled{background:#0a1a2a;color:#1a3a55;cursor:not-allowed;}
+.footer-txt{max-width:900px;margin:4px auto 0;font-family:'Share Tech Mono',monospace;font-size:8px;color:#0a2a3a;text-align:right;}
 
-@keyframes rSweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-@keyframes rPulse{0%,100%{opacity:.5}50%{opacity:.1}}
-@keyframes bPop{0%{opacity:0;transform:scale(0)}40%{opacity:1;transform:scale(1.4)}100%{opacity:.2;transform:scale(.8)}}
-@keyframes glow{0%,100%{text-shadow:0 0 18px #00d4ffaa,0 0 35px #00d4ff22}50%{text-shadow:0 0 28px #00d4ffcc,0 0 55px #00d4ff44}}
-@keyframes sPulse{0%,100%{box-shadow:0 0 5px currentColor}50%{box-shadow:0 0 18px currentColor,0 0 35px currentColor}}
+@keyframes titlePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
+@keyframes sigPulse{0%,100%{box-shadow:0 0 5px currentColor}50%{box-shadow:0 0 18px currentColor,0 0 35px currentColor}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes globeSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes scanLine{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
-  <div class="radar" id="radarEl"></div>
-  <div style="flex:1">
+  <!-- GLOBE RADAR -->
+  <div class="globe">
+    <svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="globeGrad" cx="40%" cy="35%">
+          <stop offset="0%" stop-color="#001840"/>
+          <stop offset="100%" stop-color="#000a1a"/>
+        </radialGradient>
+        <clipPath id="globeClip">
+          <circle cx="44" cy="44" r="38"/>
+        </clipPath>
+      </defs>
+      <!-- Globe base -->
+      <circle cx="44" cy="44" r="38" fill="url(#globeGrad)" stroke="rgba(0,180,255,0.4)" stroke-width="1"/>
+      <!-- Latitude lines -->
+      <g clip-path="url(#globeClip)" stroke="rgba(0,150,255,0.2)" stroke-width="0.6" fill="none">
+        <ellipse cx="44" cy="44" rx="38" ry="10"/>
+        <ellipse cx="44" cy="44" rx="38" ry="22"/>
+        <ellipse cx="44" cy="44" rx="38" ry="34"/>
+        <line x1="6" y1="44" x2="82" y2="44"/>
+        <line x1="44" y1="6" x2="44" y2="82"/>
+      </g>
+      <!-- Longitude lines spinning -->
+      <g clip-path="url(#globeClip)" stroke="rgba(0,180,255,0.15)" stroke-width="0.5" fill="none" style="animation:globeSpin 20s linear infinite;transform-origin:44px 44px">
+        <ellipse cx="44" cy="44" rx="15" ry="38"/>
+        <ellipse cx="44" cy="44" rx="30" ry="38"/>
+      </g>
+      <!-- Scan sweep -->
+      <g clip-path="url(#globeClip)" style="animation:scanLine 4s linear infinite;transform-origin:44px 44px">
+        <path d="M44 44 L82 44 A38 38 0 0 0 44 6 Z" fill="rgba(0,180,255,0.08)"/>
+        <line x1="44" y1="44" x2="82" y2="44" stroke="rgba(0,220,255,0.6)" stroke-width="1"/>
+      </g>
+      <!-- Blips -->
+      <circle cx="58" cy="30" r="2.5" fill="#00dc64" opacity="0.9"><animate attributeName="opacity" values="0;1;0.4;1;0" dur="3s" repeatCount="indefinite" begin="0.3s"/></circle>
+      <circle cx="28" cy="55" r="2.5" fill="#ff4040" opacity="0.9"><animate attributeName="opacity" values="0;1;0.4;1;0" dur="3s" repeatCount="indefinite" begin="1.2s"/></circle>
+      <circle cx="50" cy="62" r="2" fill="#ffb400" opacity="0.9"><animate attributeName="opacity" values="0;1;0.4;1;0" dur="3s" repeatCount="indefinite" begin="2.1s"/></circle>
+      <!-- Center dot -->
+      <circle cx="44" cy="44" r="2.5" fill="#00b4ff"><animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/></circle>
+      <!-- Outer ring -->
+      <circle cx="44" cy="44" r="41" fill="none" stroke="rgba(0,150,255,0.2)" stroke-width="1" stroke-dasharray="4 3"/>
+    </svg>
+  </div>
+
+  <div class="title-block">
     <div class="logo">RADAR G-7</div>
-    <div class="logo-sub">CRYPTO INTELLIGENCE · PREDICTIVE ANALYTICS · REAL-TIME</div>
+    <div class="logo-sub">CRYPTO INTELLIGENCE · PREDICTIVE ANALYTICS · GLOBAL SCAN</div>
     <div class="badges">
-      <span class="badge" style="color:#00ff88;border-color:rgba(0,255,136,0.22);animation:blink 1.8s infinite">● EN VIVO</span>
-      <span class="badge" style="color:#00d4ff;border-color:rgba(0,212,255,0.18)">◈ COINGECKO</span>
-      <span class="badge" style="color:#00d4ff;border-color:rgba(0,212,255,0.18)">◈ CMC</span>
-      <span class="badge" style="color:#ff8800;border-color:rgba(255,136,0,0.22)">◈ DEXSCREENER</span>
-      <span class="badge" style="color:#aa88ff;border-color:rgba(170,136,255,0.2)">⚡ WEB SEARCH</span>
+      <span class="badge" style="background:rgba(0,200,80,0.1);color:#00dc64;border:1px solid rgba(0,200,80,0.3);animation:blink 1.8s infinite">● EN VIVO</span>
+      <span class="badge" style="background:rgba(0,120,255,0.08);color:#00b4ff;border:1px solid rgba(0,150,255,0.2)">◈ COINGECKO</span>
+      <span class="badge" style="background:rgba(0,120,255,0.08);color:#00b4ff;border:1px solid rgba(0,150,255,0.2)">◈ CMC</span>
+      <span class="badge" style="background:rgba(255,120,0,0.08);color:#ff7800;border:1px solid rgba(255,140,0,0.25)">◈ DEXSCREENER</span>
+      <span class="badge" style="background:rgba(120,80,255,0.08);color:#9060ff;border:1px solid rgba(140,100,255,0.2)">⚡ WEB SEARCH</span>
     </div>
   </div>
 </div>
@@ -125,12 +171,12 @@ input::placeholder,textarea::placeholder{color:#1a4060;}
 <!-- SEARCH -->
 <div class="search-area">
   <div class="search-row">
-    <span style="color:#00d4ff;font-size:14px;flex-shrink:0">🔍</span>
+    <span style="color:#00b4ff;font-size:15px;flex-shrink:0">🔍</span>
     <input class="search-input" id="sInput" type="text" placeholder="Busca cualquier crypto: Bitcoin, PEPE, Solana, DOGE, cualquier token..."/>
-    <button class="btn-search" id="sBtn" onclick="doSearch()">ANALIZAR</button>
+    <button class="btn-analyze" id="sBtn" onclick="doSearch()">ANALIZAR</button>
   </div>
   <div class="quick-tags">
-    <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1a4050;align-self:center">RÁPIDO:</span>
+    <span class="tag-label">RÁPIDO:</span>
     <span class="tag" onclick="searchCoin('Bitcoin')">Bitcoin</span>
     <span class="tag" onclick="searchCoin('Ethereum')">Ethereum</span>
     <span class="tag" onclick="searchCoin('Solana')">Solana</span>
@@ -171,124 +217,83 @@ input::placeholder,textarea::placeholder{color:#1a4060;}
 <div class="input-area">
   <div class="input-row">
     <div class="input-wrap">
-      <div class="input-label">◈ PREGUNTA LIBRE</div>
-      <textarea id="chatInput" rows="2" placeholder="¿Qué crypto va a pumpear? / Analiza el mercado / Señales de dump..."></textarea>
+      <div class="input-label">◈ CONSULTA LIBRE AL SISTEMA</div>
+      <textarea id="chatInput" rows="2" placeholder="¿Qué crypto va a pumpear esta semana? / Analiza el mercado / ¿Hay señales de dump en altcoins?..."></textarea>
     </div>
     <button class="btn-scan" id="sendBtn" onclick="sendChat()">
-      <span style="font-size:16px">🛰️</span>
+      <span style="font-size:18px">🛰️</span>
       <span>SCAN</span>
     </button>
   </div>
-  <div class="footer-txt">ENTER enviar · RADAR G-7 · CoinGecko · CMC · DexScreener · Anthropic AI</div>
+  <div class="footer-txt">ENTER enviar · SHIFT+ENTER nueva línea · RADAR G-7 · CoinGecko · CMC · DexScreener</div>
 </div>
 
 <script>
-// ── KB ──
-const KB = `CASOS HISTÓRICOS RADAR G-7:
-1) RAVE DAO Abr2026: $0.25→$28(+6000%) en 9 días → -95% en 48h. Supply 90% insiders, pump sin catalizador, Vol/MCap artificial. $6B destruidos. REGLA: supply concentrado + pump sin catalizador = DUMP INMINENTE.
-2) Momentum MMT Nov2025: TGE Binance+OKX → +4000% en horas → -86% en días. REGLA: listing top exchange = pump casi seguro + corrección -80%.
-3) Luna Terra May2022: $119→$0.0003 en 4 días. APY 19.5% insostenible, MCap(LUNA)<Outstanding(UST). $50B destruidos. REGLA: stablecoin algorítmica + yield alto sin colateral = bomba de tiempo.
-SEÑALES PUMP: Vol/MCap>15% súbito, precio lateral+vol bajo, +3% en 1H sin noticias, listing Binance/OKX, RSI<30 rebotando.
-SEÑALES DUMP: Vol/MCap>30% precio estancado, pump>200% sin catalizador, supply>70% pocas wallets, RSI>80+divergencia bajista.`;
-
 const FORMAT = `
-Responde con este formato:
-━━━━━━━━━━━━━━━━━━━━━━━━
-🛰️ RADAR G-7 — ANÁLISIS
-━━━━━━━━━━━━━━━━━━━━━━━━
+Usa este formato EXACTO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛰️ RADAR G-7 — ANÁLISIS EN VIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 ACTIVO: [nombre] ($SYM)
-💰 PRECIO: $[real] | 24H: [%] | 7D: [%]
+💰 PRECIO ACTUAL: $[precio real buscado]
+📊 CAMBIOS: 1H: [%] | 24H: [%] | 7D: [%]
 ◈ SEÑAL: [PUMP INMINENTE 🟢 / DUMP INMINENTE 🔴 / ALERTA ALTA ⚠️ / VIGILANCIA 👁 / NEUTRO ⚪]
-◈ SCORE: [X]/10 | PROB: [X%]
-◈ VENTANA: [tiempo]
-━━━ MÉTRICAS ━━━
-MCap: $[real] | Vol24H: $[real] | Vol/MCap: [%]
+◈ SCORE: [X]/10 | PROBABILIDAD: [X%] [ALTA/MEDIA/BAJA]
+◈ VENTANA ESTIMADA: [tiempo]
+━━━ MÉTRICAS REALES ━━━
+Market Cap: $[real] | Vol 24H: $[real]
+Ratio Vol/MCap: [%] → [Normal/Anómalo/CRÍTICO]
 ATH: $[real] | Desde ATH: [%]
-━━━ HISTÓRICO ━━━
-📁 Caso similar: [RAVE DAO / Momentum MMT / Luna Terra / otro]
-━━━ SEÑALES ━━━
-🔺 BULLISH: → [señal] → [señal]
-🔻 BEARISH: → [señal] → [señal]
+━━━ CASOS HISTÓRICOS SIMILARES ━━━
+📁 [Caso más parecido: RAVE DAO / Momentum MMT / Luna Terra / otro real]
+━━━ SEÑALES DETECTADAS ━━━
+🔺 BULLISH: → [señal real] → [señal real]
+🔻 BEARISH: → [señal real] → [señal real]
 ━━━ ESTRATEGIA ━━━
-🎯 TARGET: $[precio] (+[%]) | 🛑 STOP: $[precio] (-[%])
-⚖️ R/R: [X:1]
-━━━ VEREDICTO ━━━
-[3 líneas concretas]
-CONVICCIÓN: [X]/10
-⚠️ Informativo. DYOR.`;
+🎯 TARGET: $[precio] (+[%]) | 🛑 STOP-LOSS: $[precio] (-[%])
+⚖️ RIESGO/RECOMPENSA: [X:1]
+━━━ VEREDICTO FINAL ━━━
+[3-4 líneas concretas: qué hacer, cuándo, qué lo invalida]
+CONVICCIÓN RADAR G-7: [X]/10
+⚠️ Análisis informativo. No es consejo financiero. DYOR.`;
 
 const PROMPTS = {
-  scan: `Busca en CoinGecko top gainers y losers de hoy. Identifica las 5 cryptos con mayor probabilidad de pump o dump ahora mismo. Para cada una: señal, precio, cambio 24H. ${FORMAT}`,
-  pump: `Busca en CoinGecko top gainers hoy. ¿Cuáles tienen señales de PUMP más fuertes? ${FORMAT}`,
-  dump: `Busca en CoinGecko top losers hoy. ¿Cuáles están en mayor riesgo de DUMP? ${FORMAT}`,
-  meme: `Busca datos de DOGE, SHIB, PEPE, BONK, FLOKI ahora. ¿Cuáles tienen señal de pump o dump? ${FORMAT}`,
-  dex: `Busca en DexScreener los tokens más trending ahora. Lista top 5 con señales de pump o dump. ${FORMAT}`,
-  market: `Busca el estado actual del mercado crypto: market cap total, dominancia BTC, Fear & Greed Index, tendencia general.`
+  scan: `Busca AHORA MISMO en CoinGecko (coingecko.com) los top gainers y top losers del día. También busca las criptomonedas con mayor volumen anómalo. Identifica las TOP 5 con mayor probabilidad de pump o dump en las próximas 24-48 horas. Para cada una usa este formato:\n${FORMAT}`,
+  pump: `Busca en CoinGecko top gainers de HOY. Analiza cuáles tienen las señales más fuertes de PUMP próximo basándote en: volumen anómalo vs market cap, momentum alcista en 1H y 24H, y patrones técnicos. Muestra las TOP 3 con señales de pump más fuertes.\n${FORMAT}`,
+  dump: `Busca en CoinGecko top losers de HOY y cryptos con caídas bruscas recientes. Identifica las TOP 3 con mayor riesgo de DUMP inminente. Analiza señales de distribución, volumen de venta, y patrones bajistas.\n${FORMAT}`,
+  meme: `Busca datos actuales de DOGE, SHIB, PEPE, BONK, FLOKI y las memecoins trending ahora mismo. ¿Cuáles tienen señales de pump o dump inminente? Analiza volumen, momentum y sentimiento social.\n${FORMAT}`,
+  dex: `Busca en DexScreener (dexscreener.com/trending) los tokens más trending ahora mismo en todas las chains. Identifica los TOP 5 con mayor actividad anómala y potencial de movimiento brusco. Incluye chain, DEX y métricas clave.\n${FORMAT}`,
+  market: `Busca el estado actual del mercado crypto: market cap total global, dominancia de Bitcoin y Ethereum, Fear & Greed Index actual, tendencia del mercado (alcista/bajista/lateral), y las 3 noticias más importantes de hoy que afectan al mercado. Da un resumen ejecutivo completo.`
 };
-const LABELS = {scan:'📡 Escanear mercado',pump:'🟢 Top pumps hoy',dump:'🔴 Riesgo dump',meme:'🔥 Memecoins',dex:'📊 DexScreener',market:'🌐 Estado mercado'};
+const LABELS = {scan:'📡 Escanear mercado',pump:'🟢 Top pumps hoy',dump:'🔴 Riesgo dump',meme:'🔥 Memecoins',dex:'📊 DexScreener trending',market:'🌐 Estado del mercado'};
 
-// ── STATE ──
 let busy = false;
-let history = [];
 
-// ── RADAR ──
-function buildRadar() {
-  const el = document.getElementById('radarEl');
-  [1,.72,.46,.26].forEach((s,i) => {
-    const d = document.createElement('div');
-    d.className = 'r-ring';
-    const sz = 76*s;
-    d.style.cssText = `width:${sz}px;height:${sz}px;border:1px solid rgba(0,212,255,${.07+i*.05});animation:rPulse ${2+i*.4}s ease-in-out infinite;animation-delay:${i*.25}s`;
-    el.appendChild(d);
-  });
-  ['horizontal','vertical'].forEach(dir => {
-    const l = document.createElement('div');
-    l.style.cssText = dir==='horizontal'
-      ? 'position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(0,212,255,.06);transform:translateY(-50%)'
-      : 'position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(0,212,255,.06);transform:translateX(-50%)';
-    el.appendChild(l);
-  });
-  const sw = document.createElement('div');
-  sw.className = 'r-sweep';
-  el.appendChild(sw);
-  [['22%','62%','.4s','#00ff88'],['62%','32%','1.3s','#ff4444'],['40%','25%','2.1s','#ffcc00']].forEach(([t,l,d,c]) => {
-    const b = document.createElement('div');
-    b.className = 'r-blip';
-    b.style.cssText = `top:${t};left:${l};background:${c};box-shadow:0 0 7px ${c};animation-delay:${d}`;
-    el.appendChild(b);
-  });
-  const dot = document.createElement('div');
-  dot.className = 'r-dot';
-  el.appendChild(dot);
-}
-
-// ── RENDER BOT MESSAGE ──
 function renderBot(text) {
   const wrap = document.createElement('div');
   text.split('\n').forEach(line => {
-    let el;
-    if (!line.trim()) { el = document.createElement('div'); el.className='line-gap'; }
-    else if (line.includes('RADAR G-7 —')||line.includes('🛰️ RADAR')) { el = document.createElement('div'); el.className='line-title'; el.textContent=line; }
-    else if (line.startsWith('━━━━')) { el = document.createElement('div'); el.className='line-div'; }
-    else if (line.startsWith('━━━')) { el = document.createElement('div'); el.className='line-sec'; el.textContent=line; }
-    else if (line.includes('PUMP INMINENTE')) { el = document.createElement('div'); el.className='sig-pump'; el.textContent=line; }
-    else if (line.includes('DUMP INMINENTE')) { el = document.createElement('div'); el.className='sig-dump'; el.textContent=line; }
-    else if (line.includes('ALERTA ALTA')) { el = document.createElement('div'); el.className='sig-alert'; el.textContent=line; }
-    else if (line.includes('VIGILANCIA')) { el = document.createElement('div'); el.className='sig-watch'; el.textContent=line; }
-    else if (line.includes('CONVICCIÓN')) { el = document.createElement('div'); el.className='line-conv'; el.textContent=line; }
-    else if (line.startsWith('🔺')) { el = document.createElement('div'); el.className='line-bull'; el.textContent=line; }
-    else if (line.startsWith('🔻')) { el = document.createElement('div'); el.className='line-bear'; el.textContent=line; }
-    else if (line.trim().startsWith('→')) { el = document.createElement('div'); el.className='line-arrow'; el.textContent=line; }
-    else if (line.startsWith('📁')) { el = document.createElement('div'); el.className='line-hist'; el.textContent=line; }
-    else if (line.startsWith('⚠️')) { el = document.createElement('div'); el.className='line-disc'; el.textContent=line; }
-    else if (line.startsWith('◈')) { el = document.createElement('div'); el.className='line-circ'; el.textContent=line; }
-    else { el = document.createElement('div'); el.className='line-txt'; el.textContent=line; }
+    let el = document.createElement('div');
+    if (!line.trim()) { el.className='line-gap'; }
+    else if (line.includes('RADAR G-7 —')||line.includes('🛰️ RADAR')) { el.className='line-title'; el.textContent=line; }
+    else if (line.startsWith('━━━━')) { el.className='line-div'; }
+    else if (line.startsWith('━━━')) { el.className='line-sec'; el.textContent=line; }
+    else if (line.includes('PUMP INMINENTE')) { el.className='sig-pump'; el.textContent=line; }
+    else if (line.includes('DUMP INMINENTE')) { el.className='sig-dump'; el.textContent=line; }
+    else if (line.includes('ALERTA ALTA')) { el.className='sig-alert'; el.textContent=line; }
+    else if (line.includes('VIGILANCIA')) { el.className='sig-watch'; el.textContent=line; }
+    else if (line.includes('CONVICCIÓN')) { el.className='line-conv'; el.textContent=line; }
+    else if (line.startsWith('🔺')) { el.className='line-bull'; el.textContent=line; }
+    else if (line.startsWith('🔻')) { el.className='line-bear'; el.textContent=line; }
+    else if (line.trim().startsWith('→')) { el.className='line-arrow'; el.textContent=line; }
+    else if (line.startsWith('📁')) { el.className='line-hist'; el.textContent=line; }
+    else if (line.startsWith('⚠️')) { el.className='line-disc'; el.textContent=line; }
+    else if (line.startsWith('◈')) { el.className='line-circ'; el.textContent=line; }
+    else { el.className='line-txt'; el.textContent=line; }
     wrap.appendChild(el);
   });
   return wrap;
 }
 
-// ── ADD MESSAGE ──
 function addMsg(role, content) {
   const inner = document.getElementById('chatInner');
   const msgEl = document.createElement('div');
@@ -307,49 +312,45 @@ function addMsg(role, content) {
     msgEl.appendChild(av);
   }
   inner.appendChild(msgEl);
-  history.push({ role: role==='bot'?'assistant':'user', content });
   scrollBottom();
 }
 
 function showLoader() {
   const inner = document.getElementById('chatInner');
   const ld = document.createElement('div');
-  ld.className = 'loading-msg'; ld.id = 'loader';
-  ld.innerHTML = `<div class="av bot">G7</div><div class="loading-bubble"><div class="spinner"></div><div><div class="loading-text">ESCANEANDO...</div><div class="loading-sub">CoinGecko · CoinMarketCap · DexScreener</div></div></div>`;
+  ld.className='loading-msg'; ld.id='loader';
+  ld.innerHTML=`<div class="av bot">G7</div><div class="loading-bubble"><div class="spinner"></div><div><div class="loading-text">ESCANEANDO MERCADO...</div><div class="loading-sub">CoinGecko · CoinMarketCap · DexScreener</div></div></div>`;
   inner.appendChild(ld);
   scrollBottom();
 }
 
-function hideLoader() { const l = document.getElementById('loader'); if(l) l.remove(); }
+function hideLoader() { const l=document.getElementById('loader'); if(l) l.remove(); }
 
 function scrollBottom() {
   setTimeout(() => {
-    const chat = document.getElementById('chatEl');
-    chat.scrollTop = chat.scrollHeight;
-  }, 50);
+    const c = document.getElementById('chatEl');
+    c.scrollTop = c.scrollHeight;
+  }, 80);
 }
 
-function setUI(disabled) {
-  busy = disabled;
-  document.getElementById('sBtn').disabled = disabled;
-  document.getElementById('sendBtn').disabled = disabled;
-  document.getElementById('sInput').disabled = disabled;
-  document.getElementById('chatInput').disabled = disabled;
-  document.querySelectorAll('.qbtn').forEach(b => b.disabled = disabled);
+function setUI(d) {
+  busy = d;
+  ['sBtn','sendBtn'].forEach(id => document.getElementById(id).disabled = d);
+  ['sInput','chatInput'].forEach(id => document.getElementById(id).disabled = d);
+  document.querySelectorAll('.qbtn').forEach(b => b.disabled = d);
+  document.querySelectorAll('.tag').forEach(t => t.style.pointerEvents = d ? 'none' : 'auto');
 }
 
-// ── API CALL ──
-async function callAI(userMsg) {
-  const msgs = [...history, { role:'user', content: userMsg }];
+async function callAI(prompt) {
   const res = await fetch('/api/ai', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
       model: 'claude-sonnet-4-5',
       max_tokens: 1000,
-      system: `Eres RADAR G-7, analista crypto de élite. Usa web_search para datos reales. Responde en español. ${KB}`,
-      messages: msgs,
-      tools: [{ type:'web_search_20250305', name:'web_search' }]
+      system: 'Eres RADAR G-7, sistema de análisis predictivo crypto de élite. SIEMPRE usa web_search para obtener precios y datos REALES y ACTUALES antes de responder. Nunca inventes datos. Responde en español.',
+      messages: [{role:'user', content: prompt}],
+      tools: [{type:'web_search_20250305', name:'web_search'}]
     })
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -371,7 +372,7 @@ async function send(prompt, display) {
     addMsg('bot', reply);
   } catch(e) {
     hideLoader();
-    addMsg('bot', `⚠️ Error: ${e.message}\n\nIntenta de nuevo.`);
+    addMsg('bot', `⚠️ Error: ${e.message}\n\nIntenta de nuevo en unos segundos.`);
   } finally {
     setUI(false);
   }
@@ -379,13 +380,13 @@ async function send(prompt, display) {
 
 function doSearch() {
   const v = document.getElementById('sInput').value.trim();
-  if (!v || busy) return;
-  send(`Busca datos reales de "${v}" en CoinGecko y CoinMarketCap AHORA. Precio actual, cambio 1H/24H/7D, market cap, volumen. Análisis completo pump/dump.${FORMAT}`, `Analizar: ${v}`);
+  if (!v||busy) return;
+  send(`Busca datos REALES Y ACTUALES de "${v}" en CoinGecko y CoinMarketCap ahora mismo. Precio exacto, cambios 1H/24H/7D, market cap, volumen 24H, ATH. Luego genera análisis completo pump/dump.${FORMAT}`, `Analizar: ${v}`);
 }
 
 function searchCoin(coin) {
   if (busy) return;
-  send(`Busca datos reales de ${coin} en CoinGecko y CMC ahora mismo. Análisis completo pump/dump.${FORMAT}`, `Analizar: ${coin}`);
+  send(`Busca datos reales de ${coin} en CoinGecko ahora mismo y genera análisis completo pump/dump.${FORMAT}`, `Analizar: ${coin}`);
 }
 
 function quickAction(type) {
@@ -395,18 +396,16 @@ function quickAction(type) {
 
 function sendChat() {
   const v = document.getElementById('chatInput').value.trim();
-  if (!v || busy) return;
-  send(`${v}${FORMAT}`, v);
+  if (!v||busy) return;
+  send(`${v}\n\n${FORMAT}`, v);
 }
 
-// ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
-  buildRadar();
   const wb = document.getElementById('welcomeBubble');
-  wb.appendChild(renderBot('🛰️ RADAR G-7 — SISTEMA ACTIVO\n\nSistema operacional con datos en tiempo real.\n◈ CoinGecko + CoinMarketCap + DexScreener vía Web Search\n◈ Base histórica: RAVE DAO · Momentum MMT · Luna Terra\n\n━━━ USA EL BUSCADOR ━━━\n→ Escribe cualquier crypto y presiona ANALIZAR\n→ O usa los botones de escaneo rápido\n\n¿Qué quieres analizar?'));
+  wb.appendChild(renderBot('🛰️ RADAR G-7 — SISTEMA ACTIVO\n\nSistema de inteligencia predictiva crypto operacional.\n◈ Datos en tiempo real: CoinGecko · CoinMarketCap · DexScreener\n◈ Base histórica: RAVE DAO · Momentum MMT · Luna Terra\n◈ Detección automática de PUMP y DUMP\n\n━━━ CÓMO USAR ━━━\n→ Escribe cualquier crypto en el buscador → ANALIZAR\n→ Usa los botones de escaneo rápido para análisis del mercado\n→ Pregunta cualquier cosa en el campo de abajo\n\n¿Qué quieres analizar primero?'));
 
   document.getElementById('chatInput').addEventListener('keydown', e => {
-    if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+    if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
   });
   document.getElementById('sInput').addEventListener('keydown', e => {
     if (e.key==='Enter') doSearch();
