@@ -5,165 +5,153 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RADAR G-7 — Crypto Intelligence</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
-body{height:100vh;background:#04080f;color:#e2f0ff;font-family:'Exo 2',sans-serif;display:flex;flex-direction:column;}
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:#02050a;}
-::-webkit-scrollbar-thumb{background:rgba(0,180,255,0.3);border-radius:2px;}
-input,textarea{outline:none;}
-input::placeholder,textarea::placeholder{color:#1a3a55;}
+body{height:100vh;background:#f8f9fa;color:#111;font-family:'Inter',sans-serif;display:flex;flex-direction:column;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#f0f0f0;}::-webkit-scrollbar-thumb{background:rgba(220,30,30,0.3);border-radius:2px;}
+input,textarea{outline:none;}input::placeholder,textarea::placeholder{color:#aaa;}
 
 /* HEADER */
-.header{background:linear-gradient(180deg,#060e1c 0%,#04080f 100%);border-bottom:1px solid rgba(0,180,255,0.15);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;z-index:20;}
+.header{background:linear-gradient(135deg,#0a0a0a 0%,#1a0505 50%,#0a0a0a 100%);border-bottom:3px solid #dc1e1e;padding:12px 18px;display:flex;align-items:center;gap:16px;flex-shrink:0;box-shadow:0 4px 20px rgba(220,30,30,0.2);}
 
-/* GLOBE RADAR */
-.globe{position:relative;width:88px;height:88px;flex-shrink:0;}
-.globe svg{width:88px;height:88px;}
+/* GLOBE */
+.globe{position:relative;width:90px;height:90px;flex-shrink:0;}
+.globe svg{width:90px;height:90px;}
 
 /* TITLE */
-.title-block{flex:1;}
-.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:22px;letter-spacing:5px;background:linear-gradient(135deg,#00b4ff,#0066ff,#00ffcc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:titlePulse 4s ease-in-out infinite;}
-.logo-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a6080;letter-spacing:3px;margin-top:3px;}
-.badges{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;}
-.badge{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 8px;letter-spacing:1px;border-radius:2px;}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:24px;letter-spacing:5px;color:#fff;text-shadow:0 0 20px rgba(220,30,30,0.8),0 0 40px rgba(220,30,30,0.4);}
+.logo span{color:#dc1e1e;}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:3px;margin-top:4px;}
+.badges{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.badge{font-family:'JetBrains Mono',monospace;font-size:8px;padding:2px 8px;letter-spacing:1px;border-radius:2px;}
 
 /* SEARCH */
-.search-area{background:rgba(4,8,15,0.98);border-bottom:1px solid rgba(0,180,255,0.1);padding:9px 14px;flex-shrink:0;}
+.search-area{background:#fff;border-bottom:2px solid #eee;padding:10px 16px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
 .search-row{display:flex;gap:8px;align-items:center;}
-.search-input{flex:1;background:rgba(0,20,40,0.9);border:1px solid rgba(0,180,255,0.2);color:#e2f0ff;font-family:'Exo 2',sans-serif;font-size:13px;padding:9px 12px;border-radius:3px;transition:border .2s;}
-.search-input:focus{border-color:rgba(0,180,255,0.5);}
-.btn-analyze{background:linear-gradient(135deg,#0066ff,#0044cc);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:10px;padding:0 18px;height:42px;cursor:pointer;letter-spacing:2px;border-radius:3px;white-space:nowrap;transition:all .2s;}
-.btn-analyze:hover{background:linear-gradient(135deg,#0080ff,#0055dd);}
-.btn-analyze:disabled{background:#112233;color:#224455;cursor:not-allowed;}
-.quick-tags{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;align-items:center;}
-.tag-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:#1a3a50;}
-.tag{background:rgba(0,100,200,0.08);border:1px solid rgba(0,150,255,0.15);color:#3a7090;font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;cursor:pointer;border-radius:2px;transition:all .15s;}
-.tag:hover{color:#00b4ff;border-color:rgba(0,180,255,0.4);background:rgba(0,100,200,0.15);}
+.search-input{flex:1;background:#f5f5f5;border:2px solid #e0e0e0;color:#111;font-family:'Inter',sans-serif;font-size:13px;padding:9px 14px;border-radius:6px;transition:border .2s;}
+.search-input:focus{border-color:#dc1e1e;background:#fff;}
+.btn-analyze{background:linear-gradient(135deg,#dc1e1e,#a01010);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:10px;padding:0 20px;height:44px;cursor:pointer;letter-spacing:2px;border-radius:6px;white-space:nowrap;font-weight:700;box-shadow:0 2px 10px rgba(220,30,30,0.3);}
+.btn-analyze:hover{background:linear-gradient(135deg,#e52525,#b01515);}
+.btn-analyze:disabled{background:#ccc;color:#999;cursor:not-allowed;box-shadow:none;}
+.quick-tags{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.tag-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#999;}
+.tag{background:#fff;border:1.5px solid #ddd;color:#555;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 9px;cursor:pointer;border-radius:20px;transition:all .15s;}
+.tag:hover{color:#dc1e1e;border-color:#dc1e1e;background:#fff5f5;}
 
 /* QUICK BUTTONS */
-.quick-btns{background:rgba(2,5,12,0.95);border-bottom:1px solid rgba(0,120,255,0.08);padding:7px 12px;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
-.qbtn{background:rgba(0,60,120,0.15);border:1px solid rgba(0,120,255,0.18);color:#5a90c0;font-family:'Exo 2',sans-serif;font-size:10px;padding:5px 11px;cursor:pointer;border-radius:3px;transition:all .15s;}
-.qbtn:hover:not(:disabled){background:rgba(0,80,180,0.25);color:#00b4ff;border-color:rgba(0,180,255,0.35);}
+.quick-btns{background:#111;padding:8px 14px;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid #222;}
+.qbtn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#ccc;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;padding:5px 12px;cursor:pointer;border-radius:4px;transition:all .15s;}
+.qbtn:hover:not(:disabled){background:rgba(220,30,30,0.15);color:#ff4444;border-color:rgba(220,30,30,0.4);}
 .qbtn:disabled{opacity:0.35;cursor:not-allowed;}
 
 /* CHAT */
-.chat-wrapper{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.chat{flex:1;overflow-y:scroll;padding:14px 12px;-webkit-overflow-scrolling:touch;}
-.chat-inner{max-width:900px;margin:0 auto;padding-bottom:10px;}
+.chat-wrapper{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;background:#f4f4f4;}
+.chat{flex:1;overflow-y:scroll;padding:16px 14px;-webkit-overflow-scrolling:touch;}
+.chat-inner{max-width:860px;margin:0 auto;padding-bottom:12px;}
 
 /* MESSAGES */
-.msg{display:flex;margin-bottom:13px;animation:fadeUp 0.3s ease-out;}
-.msg.user{justify-content:flex-end;}
-.msg.bot{justify-content:flex-start;}
-.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-.av.bot{background:linear-gradient(135deg,#001830,#002850);border:1px solid rgba(0,180,255,0.4);font-family:'Orbitron',monospace;font-size:7px;font-weight:700;color:#00b4ff;margin-right:8px;box-shadow:0 0 12px rgba(0,150,255,0.2);}
-.av.user{background:rgba(0,80,180,0.12);border:1px solid rgba(0,150,255,0.25);font-size:13px;margin-left:8px;}
-.bubble{border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.68;}
-.bubble.user{background:linear-gradient(135deg,rgba(0,80,180,0.18),rgba(0,60,150,0.12));border:1px solid rgba(0,150,255,0.25);border-radius:12px 2px 12px 12px;max-width:72%;color:#c8e8ff;}
-.bubble.bot{background:linear-gradient(180deg,rgba(0,10,24,0.95),rgba(0,6,18,0.98));border:1px solid rgba(0,120,255,0.12);border-radius:2px 12px 12px 12px;max-width:88%;color:#b0d0f0;}
+.msg{display:flex;margin-bottom:16px;animation:fadeUp .3s ease-out;}
+.msg.user{justify-content:flex-end;}.msg.bot{justify-content:flex-start;}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.av.bot{background:linear-gradient(135deg,#111,#1a0505);border:2px solid #dc1e1e;font-family:'Orbitron',monospace;font-size:7px;font-weight:700;color:#dc1e1e;margin-right:8px;box-shadow:0 0 10px rgba(220,30,30,0.3);}
+.av.user{background:linear-gradient(135deg,#222,#111);border:2px solid #444;font-size:14px;margin-left:8px;}
+.bubble{border-radius:12px;padding:13px 16px;font-size:13.5px;line-height:1.7;}
+.bubble.user{background:linear-gradient(135deg,#111,#1a1a1a);border:1px solid #333;border-radius:12px 2px 12px 12px;max-width:72%;color:#f0f0f0;font-family:'Inter',sans-serif;}
+.bubble.bot{background:#fff;border:1px solid #e5e5e5;border-radius:2px 12px 12px 12px;max-width:90%;color:#222;font-family:'Inter',sans-serif;box-shadow:0 2px 12px rgba(0,0,0,0.08);}
 
 /* SIGNAL BADGES */
-.sig-pump{display:inline-block;background:rgba(0,220,100,0.1);border:1px solid rgba(0,220,100,0.5);color:#00dc64;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;animation:sigPulse 2s infinite;}
-.sig-dump{display:inline-block;background:rgba(255,40,40,0.1);border:1px solid rgba(255,60,60,0.5);color:#ff4040;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;animation:sigPulse 2s infinite;}
-.sig-alert{display:inline-block;background:rgba(255,180,0,0.08);border:1px solid rgba(255,180,0,0.45);color:#ffb400;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;}
-.sig-watch{display:inline-block;background:rgba(0,150,255,0.08);border:1px solid rgba(0,150,255,0.4);color:#0096ff;padding:4px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:5px 0;border-radius:3px;}
-.line-div{height:1px;background:linear-gradient(90deg,transparent,rgba(0,150,255,0.25),transparent);margin:9px 0;}
-.line-sec{font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a6888;letter-spacing:1.5px;margin:9px 0 5px;border-left:2px solid rgba(0,150,255,0.3);padding-left:8px;}
-.line-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:#00b4ff;letter-spacing:1.5px;margin:4px 0;}
-.line-bull{color:#00dc64;font-size:12px;margin:3px 0;font-weight:600;}
-.line-bear{color:#ff5050;font-size:12px;margin:3px 0;font-weight:600;}
-.line-arrow{color:#7aacccc;font-size:12px;padding-left:12px;margin:2px 0;border-left:1px solid rgba(0,150,255,0.2);}
-.line-hist{background:rgba(0,100,200,0.06);border:1px solid rgba(0,150,255,0.12);padding:5px 10px;margin:4px 0;font-size:12px;color:#90c0e0;border-radius:3px;}
-.line-conv{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#ffb400;margin:8px 0;}
-.line-disc{color:#2a5a70;font-size:10px;margin-top:9px;font-family:'Share Tech Mono',monospace;}
-.line-circ{font-family:'Share Tech Mono',monospace;font-size:11px;color:#70aacc;margin:3px 0;}
-.line-gap{height:5px;}
-.line-txt{font-size:13px;color:#a0c8e8;margin:2px 0;line-height:1.68;}
+.sig-pump{display:inline-block;background:linear-gradient(135deg,#e8fff2,#d0ffe8);border:2px solid #00cc55;color:#007733;padding:5px 16px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:6px 0;border-radius:4px;animation:sigP 2s infinite;box-shadow:0 2px 8px rgba(0,200,80,0.2);}
+.sig-dump{display:inline-block;background:linear-gradient(135deg,#fff0f0,#ffe0e0);border:2px solid #cc2222;color:#990000;padding:5px 16px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:6px 0;border-radius:4px;animation:sigP 2s infinite;box-shadow:0 2px 8px rgba(200,30,30,0.2);}
+.sig-alert{display:inline-block;background:linear-gradient(135deg,#fffbe8,#fff3c8);border:2px solid #cc8800;color:#885500;padding:5px 16px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:6px 0;border-radius:4px;box-shadow:0 2px 8px rgba(200,140,0,0.15);}
+.sig-watch{display:inline-block;background:linear-gradient(135deg,#f0f8ff,#e0f0ff);border:2px solid #3388cc;color:#1155aa;padding:5px 16px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin:6px 0;border-radius:4px;}
+.l-div{height:1px;background:linear-gradient(90deg,transparent,#dc1e1e,transparent);margin:10px 0;opacity:0.3;}
+.l-sec{font-family:'JetBrains Mono',monospace;font-size:10px;color:#dc1e1e;letter-spacing:1.5px;font-weight:600;margin:10px 0 6px;padding-left:10px;border-left:3px solid #dc1e1e;}
+.l-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:#111;letter-spacing:1px;margin:4px 0;}
+.l-bull{color:#007733;font-size:13px;margin:3px 0;font-weight:600;}
+.l-bear{color:#cc2222;font-size:13px;margin:3px 0;font-weight:600;}
+.l-arr{color:#555;font-size:13px;padding-left:14px;margin:3px 0;border-left:2px solid #dc1e1e;}
+.l-hist{background:#f9f9f9;border:1px solid #e0e0e0;border-left:3px solid #dc1e1e;padding:6px 12px;margin:4px 0;font-size:12.5px;color:#333;border-radius:4px;font-family:'Inter',sans-serif;}
+.l-conv{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#dc1e1e;margin:9px 0;}
+.l-disc{color:#999;font-size:11px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-style:italic;}
+.l-circ{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#333;margin:3px 0;font-weight:500;}
+.l-gap{height:6px;}
+.l-txt{font-size:13.5px;color:#333;margin:3px 0;line-height:1.7;font-family:'Inter',sans-serif;}
 
 /* LOADING */
-.loading-msg{display:flex;justify-content:flex-start;margin-bottom:13px;}
-.loading-bubble{background:linear-gradient(180deg,rgba(0,10,24,0.95),rgba(0,6,18,0.98));border:1px solid rgba(0,120,255,0.12);border-radius:2px 12px 12px 12px;padding:13px 18px;display:flex;align-items:center;gap:13px;}
-.spinner{width:26px;height:26px;border-radius:50%;border:2px solid rgba(0,150,255,0.15);border-top:2px solid #00b4ff;animation:spin 0.8s linear infinite;flex-shrink:0;}
-.loading-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:#00b4ff;letter-spacing:2px;}
-.loading-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a4060;margin-top:3px;}
+.loading-msg{display:flex;justify-content:flex-start;margin-bottom:16px;}
+.loading-bubble{background:#fff;border:1px solid #e5e5e5;border-radius:2px 12px 12px 12px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid #f0f0f0;border-top:3px solid #dc1e1e;animation:spin .7s linear infinite;flex-shrink:0;}
+.l-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:#dc1e1e;letter-spacing:1.5px;font-weight:600;}
+.l-sub{font-family:'Inter',sans-serif;font-size:11px;color:#999;margin-top:3px;}
 
 /* INPUT */
-.input-area{background:linear-gradient(0deg,#02050a,rgba(2,5,10,0.97));border-top:1px solid rgba(0,120,255,0.12);padding:10px 12px;flex-shrink:0;}
-.input-row{max-width:900px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;}
-.input-wrap{flex:1;background:rgba(0,15,30,0.9);border:1px solid rgba(0,120,255,0.18);border-radius:4px;}
-.input-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1a4060;letter-spacing:2px;padding:4px 10px 0;}
-.input-wrap textarea{background:transparent;border:none;color:#e2f0ff;font-family:'Exo 2',sans-serif;font-size:13px;padding:6px 10px 8px;width:100%;resize:none;}
-.btn-scan{background:linear-gradient(135deg,#0055cc,#003399);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:0 14px;height:62px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:66px;flex-shrink:0;border-radius:4px;transition:all .2s;}
-.btn-scan:hover{background:linear-gradient(135deg,#0066ee,#0044bb);}
-.btn-scan:disabled{background:#0a1a2a;color:#1a3a55;cursor:not-allowed;}
-.footer-txt{max-width:900px;margin:4px auto 0;font-family:'Share Tech Mono',monospace;font-size:8px;color:#0a2a3a;text-align:right;}
+.input-area{background:#111;border-top:2px solid #dc1e1e;padding:11px 14px;flex-shrink:0;}
+.input-row{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;}
+.input-wrap{flex:1;background:#1a1a1a;border:1.5px solid #333;border-radius:6px;transition:border .2s;}
+.input-wrap:focus-within{border-color:#dc1e1e;}
+.input-label{font-family:'JetBrains Mono',monospace;font-size:8px;color:#555;letter-spacing:2px;padding:5px 12px 0;}
+.input-wrap textarea{background:transparent;border:none;color:#f0f0f0;font-family:'Inter',sans-serif;font-size:13px;padding:6px 12px 9px;width:100%;resize:none;}
+.input-wrap textarea::placeholder{color:#444;}
+.btn-scan{background:linear-gradient(135deg,#dc1e1e,#a01010);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:0 15px;height:64px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:68px;flex-shrink:0;border-radius:6px;box-shadow:0 2px 10px rgba(220,30,30,0.3);}
+.btn-scan:hover{background:linear-gradient(135deg,#e52525,#b01515);}
+.btn-scan:disabled{background:#333;color:#555;cursor:not-allowed;box-shadow:none;}
+.footer-txt{max-width:860px;margin:5px auto 0;font-family:'JetBrains Mono',monospace;font-size:8px;color:#333;text-align:right;}
 
-@keyframes titlePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
-@keyframes sigPulse{0%,100%{box-shadow:0 0 5px currentColor}50%{box-shadow:0 0 18px currentColor,0 0 35px currentColor}}
+@keyframes sigP{0%,100%{box-shadow:0 2px 8px currentColor}50%{box-shadow:0 4px 20px currentColor}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-@keyframes globeSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-@keyframes scanLine{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes gSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes scanRot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-  <!-- GLOBE RADAR -->
   <div class="globe">
-    <svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="globeGrad" cx="40%" cy="35%">
-          <stop offset="0%" stop-color="#001840"/>
-          <stop offset="100%" stop-color="#000a1a"/>
+        <radialGradient id="gg" cx="38%" cy="32%">
+          <stop offset="0%" stop-color="#2a0505"/>
+          <stop offset="100%" stop-color="#0a0000"/>
         </radialGradient>
-        <clipPath id="globeClip">
-          <circle cx="44" cy="44" r="38"/>
-        </clipPath>
+        <clipPath id="gc"><circle cx="45" cy="45" r="39"/></clipPath>
       </defs>
-      <!-- Globe base -->
-      <circle cx="44" cy="44" r="38" fill="url(#globeGrad)" stroke="rgba(0,180,255,0.4)" stroke-width="1"/>
-      <!-- Latitude lines -->
-      <g clip-path="url(#globeClip)" stroke="rgba(0,150,255,0.2)" stroke-width="0.6" fill="none">
-        <ellipse cx="44" cy="44" rx="38" ry="10"/>
-        <ellipse cx="44" cy="44" rx="38" ry="22"/>
-        <ellipse cx="44" cy="44" rx="38" ry="34"/>
-        <line x1="6" y1="44" x2="82" y2="44"/>
-        <line x1="44" y1="6" x2="44" y2="82"/>
+      <circle cx="45" cy="45" r="39" fill="url(#gg)" stroke="rgba(220,30,30,0.6)" stroke-width="1.5"/>
+      <g clip-path="url(#gc)" stroke="rgba(220,30,30,0.2)" stroke-width="0.7" fill="none">
+        <ellipse cx="45" cy="45" rx="39" ry="11"/>
+        <ellipse cx="45" cy="45" rx="39" ry="24"/>
+        <ellipse cx="45" cy="45" rx="39" ry="35"/>
+        <line x1="6" y1="45" x2="84" y2="45"/>
+        <line x1="45" y1="6" x2="45" y2="84"/>
       </g>
-      <!-- Longitude lines spinning -->
-      <g clip-path="url(#globeClip)" stroke="rgba(0,180,255,0.15)" stroke-width="0.5" fill="none" style="animation:globeSpin 20s linear infinite;transform-origin:44px 44px">
-        <ellipse cx="44" cy="44" rx="15" ry="38"/>
-        <ellipse cx="44" cy="44" rx="30" ry="38"/>
+      <g clip-path="url(#gc)" stroke="rgba(220,30,30,0.12)" stroke-width="0.6" fill="none" style="animation:gSpin 25s linear infinite;transform-origin:45px 45px">
+        <ellipse cx="45" cy="45" rx="16" ry="39"/>
+        <ellipse cx="45" cy="45" rx="32" ry="39"/>
       </g>
-      <!-- Scan sweep -->
-      <g clip-path="url(#globeClip)" style="animation:scanLine 4s linear infinite;transform-origin:44px 44px">
-        <path d="M44 44 L82 44 A38 38 0 0 0 44 6 Z" fill="rgba(0,180,255,0.08)"/>
-        <line x1="44" y1="44" x2="82" y2="44" stroke="rgba(0,220,255,0.6)" stroke-width="1"/>
+      <g clip-path="url(#gc)" style="animation:scanRot 4s linear infinite;transform-origin:45px 45px">
+        <path d="M45 45 L84 45 A39 39 0 0 0 45 6 Z" fill="rgba(220,30,30,0.08)"/>
+        <line x1="45" y1="45" x2="84" y2="45" stroke="rgba(255,60,60,0.8)" stroke-width="1.5"/>
       </g>
-      <!-- Blips -->
-      <circle cx="58" cy="30" r="2.5" fill="#00dc64" opacity="0.9"><animate attributeName="opacity" values="0;1;0.4;1;0" dur="3s" repeatCount="indefinite" begin="0.3s"/></circle>
-      <circle cx="28" cy="55" r="2.5" fill="#ff4040" opacity="0.9"><animate attributeName="opacity" values="0;1;0.4;1;0" dur="3s" repeatCount="indefinite" begin="1.2s"/></circle>
-      <circle cx="50" cy="62" r="2" fill="#ffb400" opacity="0.9"><animate attributeName="opacity" values="0;1;0.4;1;0" dur="3s" repeatCount="indefinite" begin="2.1s"/></circle>
-      <!-- Center dot -->
-      <circle cx="44" cy="44" r="2.5" fill="#00b4ff"><animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/></circle>
-      <!-- Outer ring -->
-      <circle cx="44" cy="44" r="41" fill="none" stroke="rgba(0,150,255,0.2)" stroke-width="1" stroke-dasharray="4 3"/>
+      <circle cx="60" cy="30" r="3" fill="#00cc55"><animate attributeName="opacity" values="0;1;0.3;1;0" dur="3s" repeatCount="indefinite" begin="0.3s"/></circle>
+      <circle cx="28" cy="57" r="3" fill="#dc1e1e"><animate attributeName="opacity" values="0;1;0.3;1;0" dur="3.5s" repeatCount="indefinite" begin="1.2s"/></circle>
+      <circle cx="52" cy="63" r="2.5" fill="#ffaa00"><animate attributeName="opacity" values="0;1;0.3;1;0" dur="2.8s" repeatCount="indefinite" begin="2s"/></circle>
+      <circle cx="35" cy="33" r="2" fill="#fff"><animate attributeName="opacity" values="0;0.8;0.2;0.8;0" dur="4s" repeatCount="indefinite" begin="0.8s"/></circle>
+      <circle cx="45" cy="45" r="3" fill="#dc1e1e"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+      <circle cx="45" cy="45" r="43" fill="none" stroke="rgba(220,30,30,0.2)" stroke-width="1" stroke-dasharray="5 3"/>
     </svg>
   </div>
-
-  <div class="title-block">
-    <div class="logo">RADAR G-7</div>
+  <div style="flex:1">
+    <div class="logo">RADAR <span>G-7</span></div>
     <div class="logo-sub">CRYPTO INTELLIGENCE · PREDICTIVE ANALYTICS · GLOBAL SCAN</div>
     <div class="badges">
-      <span class="badge" style="background:rgba(0,200,80,0.1);color:#00dc64;border:1px solid rgba(0,200,80,0.3);animation:blink 1.8s infinite">● EN VIVO</span>
-      <span class="badge" style="background:rgba(0,120,255,0.08);color:#00b4ff;border:1px solid rgba(0,150,255,0.2)">◈ COINGECKO</span>
-      <span class="badge" style="background:rgba(0,120,255,0.08);color:#00b4ff;border:1px solid rgba(0,150,255,0.2)">◈ CMC</span>
-      <span class="badge" style="background:rgba(255,120,0,0.08);color:#ff7800;border:1px solid rgba(255,140,0,0.25)">◈ DEXSCREENER</span>
-      <span class="badge" style="background:rgba(120,80,255,0.08);color:#9060ff;border:1px solid rgba(140,100,255,0.2)">⚡ WEB SEARCH</span>
+      <span class="badge" style="background:rgba(0,200,80,0.15);color:#00cc55;border:1px solid rgba(0,200,80,0.4);animation:blink 1.8s infinite">● EN VIVO</span>
+      <span class="badge" style="background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.15)">◈ COINGECKO LIVE</span>
+      <span class="badge" style="background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.15)">◈ CMC</span>
+      <span class="badge" style="background:rgba(220,30,30,0.15);color:#ff6060;border:1px solid rgba(220,30,30,0.3)">◈ DEXSCREENER</span>
+      <span class="badge" style="background:rgba(255,255,255,0.06);color:#aaa;border:1px solid rgba(255,255,255,0.1)">⚡ IA ANÁLISIS</span>
     </div>
   </div>
 </div>
@@ -171,17 +159,17 @@ input::placeholder,textarea::placeholder{color:#1a3a55;}
 <!-- SEARCH -->
 <div class="search-area">
   <div class="search-row">
-    <span style="color:#00b4ff;font-size:15px;flex-shrink:0">🔍</span>
+    <span style="color:#dc1e1e;font-size:16px;flex-shrink:0">🔍</span>
     <input class="search-input" id="sInput" type="text" placeholder="Busca cualquier crypto: Bitcoin, PEPE, Solana, DOGE, cualquier token..."/>
     <button class="btn-analyze" id="sBtn" onclick="doSearch()">ANALIZAR</button>
   </div>
   <div class="quick-tags">
-    <span class="tag-label">RÁPIDO:</span>
-    <span class="tag" onclick="searchCoin('Bitcoin')">Bitcoin</span>
-    <span class="tag" onclick="searchCoin('Ethereum')">Ethereum</span>
-    <span class="tag" onclick="searchCoin('Solana')">Solana</span>
-    <span class="tag" onclick="searchCoin('PEPE')">PEPE</span>
-    <span class="tag" onclick="searchCoin('DOGE')">DOGE</span>
+    <span class="tag-lbl">ACCESO RÁPIDO:</span>
+    <span class="tag" onclick="searchCoin('Bitcoin')">₿ Bitcoin</span>
+    <span class="tag" onclick="searchCoin('Ethereum')">Ξ Ethereum</span>
+    <span class="tag" onclick="searchCoin('Solana')">◎ Solana</span>
+    <span class="tag" onclick="searchCoin('PEPE')">🐸 PEPE</span>
+    <span class="tag" onclick="searchCoin('DOGE')">🐕 DOGE</span>
     <span class="tag" onclick="searchCoin('BNB')">BNB</span>
     <span class="tag" onclick="searchCoin('XRP')">XRP</span>
     <span class="tag" onclick="searchCoin('AVAX')">AVAX</span>
@@ -194,11 +182,11 @@ input::placeholder,textarea::placeholder{color:#1a3a55;}
 <!-- QUICK BUTTONS -->
 <div class="quick-btns">
   <button class="qbtn" onclick="quickAction('scan')">📡 Escanear mercado</button>
-  <button class="qbtn" onclick="quickAction('pump')">🟢 Top pumps hoy</button>
+  <button class="qbtn" onclick="quickAction('pump')">🟢 Top pumps</button>
   <button class="qbtn" onclick="quickAction('dump')">🔴 Riesgo dump</button>
   <button class="qbtn" onclick="quickAction('meme')">🔥 Memecoins</button>
   <button class="qbtn" onclick="quickAction('dex')">📊 DexScreener</button>
-  <button class="qbtn" onclick="quickAction('market')">🌐 Estado mercado</button>
+  <button class="qbtn" onclick="quickAction('market')">🌐 Mercado global</button>
 </div>
 
 <!-- CHAT -->
@@ -207,7 +195,7 @@ input::placeholder,textarea::placeholder{color:#1a3a55;}
     <div class="chat-inner" id="chatInner">
       <div class="msg bot">
         <div class="av bot">G7</div>
-        <div class="bubble bot" id="welcomeBubble"></div>
+        <div class="bubble bot" id="wb"></div>
       </div>
     </div>
   </div>
@@ -218,198 +206,281 @@ input::placeholder,textarea::placeholder{color:#1a3a55;}
   <div class="input-row">
     <div class="input-wrap">
       <div class="input-label">◈ CONSULTA LIBRE AL SISTEMA</div>
-      <textarea id="chatInput" rows="2" placeholder="¿Qué crypto va a pumpear esta semana? / Analiza el mercado / ¿Hay señales de dump en altcoins?..."></textarea>
+      <textarea id="chatInput" rows="2" placeholder="¿Qué crypto va a pumpear esta semana? / Señales de dump / Estado del mercado..."></textarea>
     </div>
     <button class="btn-scan" id="sendBtn" onclick="sendChat()">
-      <span style="font-size:18px">🛰️</span>
+      <span style="font-size:20px">🛰️</span>
       <span>SCAN</span>
     </button>
   </div>
-  <div class="footer-txt">ENTER enviar · SHIFT+ENTER nueva línea · RADAR G-7 · CoinGecko · CMC · DexScreener</div>
+  <div class="footer-txt">ENTER enviar · RADAR G-7 · CoinGecko API Live · Anthropic Claude</div>
 </div>
 
 <script>
-const FORMAT = `
-Usa este formato EXACTO:
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛰️ RADAR G-7 — ANÁLISIS EN VIVO
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 ACTIVO: [nombre] ($SYM)
-💰 PRECIO ACTUAL: $[precio real buscado]
-📊 CAMBIOS: 1H: [%] | 24H: [%] | 7D: [%]
-◈ SEÑAL: [PUMP INMINENTE 🟢 / DUMP INMINENTE 🔴 / ALERTA ALTA ⚠️ / VIGILANCIA 👁 / NEUTRO ⚪]
-◈ SCORE: [X]/10 | PROBABILIDAD: [X%] [ALTA/MEDIA/BAJA]
-◈ VENTANA ESTIMADA: [tiempo]
-━━━ MÉTRICAS REALES ━━━
-Market Cap: $[real] | Vol 24H: $[real]
-Ratio Vol/MCap: [%] → [Normal/Anómalo/CRÍTICO]
-ATH: $[real] | Desde ATH: [%]
-━━━ CASOS HISTÓRICOS SIMILARES ━━━
-📁 [Caso más parecido: RAVE DAO / Momentum MMT / Luna Terra / otro real]
-━━━ SEÑALES DETECTADAS ━━━
-🔺 BULLISH: → [señal real] → [señal real]
-🔻 BEARISH: → [señal real] → [señal real]
-━━━ ESTRATEGIA ━━━
-🎯 TARGET: $[precio] (+[%]) | 🛑 STOP-LOSS: $[precio] (-[%])
-⚖️ RIESGO/RECOMPENSA: [X:1]
-━━━ VEREDICTO FINAL ━━━
-[3-4 líneas concretas: qué hacer, cuándo, qué lo invalida]
-CONVICCIÓN RADAR G-7: [X]/10
-⚠️ Análisis informativo. No es consejo financiero. DYOR.`;
-
-const PROMPTS = {
-  scan: `Busca AHORA MISMO en CoinGecko (coingecko.com) los top gainers y top losers del día. También busca las criptomonedas con mayor volumen anómalo. Identifica las TOP 5 con mayor probabilidad de pump o dump en las próximas 24-48 horas. Para cada una usa este formato:\n${FORMAT}`,
-  pump: `Busca en CoinGecko top gainers de HOY. Analiza cuáles tienen las señales más fuertes de PUMP próximo basándote en: volumen anómalo vs market cap, momentum alcista en 1H y 24H, y patrones técnicos. Muestra las TOP 3 con señales de pump más fuertes.\n${FORMAT}`,
-  dump: `Busca en CoinGecko top losers de HOY y cryptos con caídas bruscas recientes. Identifica las TOP 3 con mayor riesgo de DUMP inminente. Analiza señales de distribución, volumen de venta, y patrones bajistas.\n${FORMAT}`,
-  meme: `Busca datos actuales de DOGE, SHIB, PEPE, BONK, FLOKI y las memecoins trending ahora mismo. ¿Cuáles tienen señales de pump o dump inminente? Analiza volumen, momentum y sentimiento social.\n${FORMAT}`,
-  dex: `Busca en DexScreener (dexscreener.com/trending) los tokens más trending ahora mismo en todas las chains. Identifica los TOP 5 con mayor actividad anómala y potencial de movimiento brusco. Incluye chain, DEX y métricas clave.\n${FORMAT}`,
-  market: `Busca el estado actual del mercado crypto: market cap total global, dominancia de Bitcoin y Ethereum, Fear & Greed Index actual, tendencia del mercado (alcista/bajista/lateral), y las 3 noticias más importantes de hoy que afectan al mercado. Da un resumen ejecutivo completo.`
-};
-const LABELS = {scan:'📡 Escanear mercado',pump:'🟢 Top pumps hoy',dump:'🔴 Riesgo dump',meme:'🔥 Memecoins',dex:'📊 DexScreener trending',market:'🌐 Estado del mercado'};
-
 let busy = false;
 
+// ── CoinGecko API ──
+async function getCoinData(query) {
+  try {
+    const s = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
+    const sd = await s.json();
+    const id = sd.coins?.[0]?.id;
+    if (!id) return null;
+    const r = await fetch(`https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=false&developer_data=false`);
+    const d = await r.json();
+    const m = d.market_data;
+    const vr = m?.total_volume?.usd && m?.market_cap?.usd ? ((m.total_volume.usd/m.market_cap.usd)*100).toFixed(1) : 'N/A';
+    return { name:d.name, sym:d.symbol?.toUpperCase(), rank:d.market_cap_rank,
+      price:m?.current_price?.usd, c1h:m?.price_change_percentage_1h_in_currency?.usd,
+      c24h:m?.price_change_percentage_24h, c7d:m?.price_change_percentage_7d,
+      mcap:m?.market_cap?.usd, vol:m?.total_volume?.usd,
+      ath:m?.ath?.usd, athChg:m?.ath_change_percentage?.usd, volRatio:vr,
+      high:m?.high_24h?.usd, low:m?.low_24h?.usd };
+  } catch { return null; }
+}
+
+async function getTopMovers() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=1h,24h,7d');
+    return await r.json();
+  } catch { return []; }
+}
+
+async function getTrending() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/search/trending');
+    const d = await r.json();
+    return d.coins?.slice(0,6).map(c=>c.item.name).join(', ')||'';
+  } catch { return ''; }
+}
+
+function fp(n) {
+  if (!n&&n!==0) return 'N/A';
+  if (n>=1e9) return `$${(n/1e9).toFixed(2)}B`;
+  if (n>=1e6) return `$${(n/1e6).toFixed(2)}M`;
+  if (n>=1e3) return `$${(n/1e3).toFixed(0)}K`;
+  return `$${n.toFixed(0)}`;
+}
+function fpr(n) {
+  if (!n) return 'N/A';
+  if (n>=1000) return `$${n.toLocaleString('en-US',{maximumFractionDigits:2})}`;
+  if (n>=1) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(6)}`;
+}
+function fpc(n) { return n!=null?`${n>0?'+':''}${n.toFixed(2)}%`:'N/A'; }
+
+// ── AI ──
+async function callAI(sys, usr) {
+  const res = await fetch('/api/ai', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ model:'claude-haiku-4-5', max_tokens:700, system:sys, messages:[{role:'user',content:usr}] })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.message||JSON.stringify(d.error));
+  return (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim()||'Sin respuesta.';
+}
+
+// ── RENDER ──
 function renderBot(text) {
-  const wrap = document.createElement('div');
+  const w = document.createElement('div');
   text.split('\n').forEach(line => {
-    let el = document.createElement('div');
-    if (!line.trim()) { el.className='line-gap'; }
-    else if (line.includes('RADAR G-7 —')||line.includes('🛰️ RADAR')) { el.className='line-title'; el.textContent=line; }
-    else if (line.startsWith('━━━━')) { el.className='line-div'; }
-    else if (line.startsWith('━━━')) { el.className='line-sec'; el.textContent=line; }
+    const el = document.createElement('div');
+    if (!line.trim()) { el.className='l-gap'; }
+    else if (line.includes('RADAR G-7 —')||line.includes('🛰️ RADAR')) { el.className='l-title'; el.textContent=line; }
+    else if (line.startsWith('━━━━')) { el.className='l-div'; }
+    else if (line.startsWith('━━━')) { el.className='l-sec'; el.textContent=line; }
     else if (line.includes('PUMP INMINENTE')) { el.className='sig-pump'; el.textContent=line; }
     else if (line.includes('DUMP INMINENTE')) { el.className='sig-dump'; el.textContent=line; }
     else if (line.includes('ALERTA ALTA')) { el.className='sig-alert'; el.textContent=line; }
     else if (line.includes('VIGILANCIA')) { el.className='sig-watch'; el.textContent=line; }
-    else if (line.includes('CONVICCIÓN')) { el.className='line-conv'; el.textContent=line; }
-    else if (line.startsWith('🔺')) { el.className='line-bull'; el.textContent=line; }
-    else if (line.startsWith('🔻')) { el.className='line-bear'; el.textContent=line; }
-    else if (line.trim().startsWith('→')) { el.className='line-arrow'; el.textContent=line; }
-    else if (line.startsWith('📁')) { el.className='line-hist'; el.textContent=line; }
-    else if (line.startsWith('⚠️')) { el.className='line-disc'; el.textContent=line; }
-    else if (line.startsWith('◈')) { el.className='line-circ'; el.textContent=line; }
-    else { el.className='line-txt'; el.textContent=line; }
-    wrap.appendChild(el);
+    else if (line.includes('CONVICCIÓN')) { el.className='l-conv'; el.textContent=line; }
+    else if (line.startsWith('🔺')) { el.className='l-bull'; el.textContent=line; }
+    else if (line.startsWith('🔻')) { el.className='l-bear'; el.textContent=line; }
+    else if (line.trim().startsWith('→')) { el.className='l-arr'; el.textContent=line; }
+    else if (line.startsWith('📁')) { el.className='l-hist'; el.textContent=line; }
+    else if (line.startsWith('⚠️')) { el.className='l-disc'; el.textContent=line; }
+    else if (line.startsWith('◈')) { el.className='l-circ'; el.textContent=line; }
+    else { el.className='l-txt'; el.textContent=line; }
+    w.appendChild(el);
   });
-  return wrap;
+  return w;
 }
 
 function addMsg(role, content) {
   const inner = document.getElementById('chatInner');
-  const msgEl = document.createElement('div');
-  msgEl.className = `msg ${role}`;
-  if (role === 'bot') {
-    const av = document.createElement('div'); av.className='av bot'; av.textContent='G7';
-    msgEl.appendChild(av);
-  }
-  const bubble = document.createElement('div');
-  bubble.className = `bubble ${role}`;
-  if (role === 'user') { bubble.textContent = content; }
-  else { bubble.appendChild(renderBot(content)); }
-  msgEl.appendChild(bubble);
-  if (role === 'user') {
-    const av = document.createElement('div'); av.className='av user'; av.textContent='👤';
-    msgEl.appendChild(av);
-  }
-  inner.appendChild(msgEl);
-  scrollBottom();
+  const m = document.createElement('div'); m.className=`msg ${role}`;
+  if (role==='bot') { const a=document.createElement('div');a.className='av bot';a.textContent='G7';m.appendChild(a); }
+  const b = document.createElement('div'); b.className=`bubble ${role}`;
+  if (role==='user') b.textContent=content; else b.appendChild(renderBot(content));
+  m.appendChild(b);
+  if (role==='user') { const a=document.createElement('div');a.className='av user';a.textContent='👤';m.appendChild(a); }
+  inner.appendChild(m); scrollBottom();
 }
 
-function showLoader() {
+function showLoader(sub) {
   const inner = document.getElementById('chatInner');
-  const ld = document.createElement('div');
-  ld.className='loading-msg'; ld.id='loader';
-  ld.innerHTML=`<div class="av bot">G7</div><div class="loading-bubble"><div class="spinner"></div><div><div class="loading-text">ESCANEANDO MERCADO...</div><div class="loading-sub">CoinGecko · CoinMarketCap · DexScreener</div></div></div>`;
-  inner.appendChild(ld);
-  scrollBottom();
+  const ld = document.createElement('div'); ld.className='loading-msg'; ld.id='loader';
+  ld.innerHTML=`<div class="av bot">G7</div><div class="loading-bubble"><div class="spinner"></div><div><div class="l-text">ANALIZANDO...</div><div class="l-sub">${sub||'Obteniendo datos reales de CoinGecko...'}</div></div></div>`;
+  inner.appendChild(ld); scrollBottom();
 }
-
-function hideLoader() { const l=document.getElementById('loader'); if(l) l.remove(); }
-
-function scrollBottom() {
-  setTimeout(() => {
-    const c = document.getElementById('chatEl');
-    c.scrollTop = c.scrollHeight;
-  }, 80);
-}
-
+function hideLoader() { const l=document.getElementById('loader'); if(l)l.remove(); }
+function scrollBottom() { setTimeout(()=>{const c=document.getElementById('chatEl');c.scrollTop=c.scrollHeight;},80); }
 function setUI(d) {
-  busy = d;
-  ['sBtn','sendBtn'].forEach(id => document.getElementById(id).disabled = d);
-  ['sInput','chatInput'].forEach(id => document.getElementById(id).disabled = d);
-  document.querySelectorAll('.qbtn').forEach(b => b.disabled = d);
-  document.querySelectorAll('.tag').forEach(t => t.style.pointerEvents = d ? 'none' : 'auto');
+  busy=d;
+  ['sBtn','sendBtn'].forEach(id=>document.getElementById(id).disabled=d);
+  ['sInput','chatInput'].forEach(id=>document.getElementById(id).disabled=d);
+  document.querySelectorAll('.qbtn').forEach(b=>b.disabled=d);
+  document.querySelectorAll('.tag').forEach(t=>t.style.pointerEvents=d?'none':'auto');
 }
 
-async function callAI(prompt) {
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1000,
-      system: 'Eres RADAR G-7, sistema de análisis predictivo crypto de élite. SIEMPRE usa web_search para obtener precios y datos REALES y ACTUALES antes de responder. Nunca inventes datos. Responde en español.',
-      messages: [{role:'user', content: prompt}],
-      tools: [{type:'web_search_20250305', name:'web_search'}]
-    })
+// ── ANALYZE COIN ──
+async function analyzeCoin(coinName) {
+  showLoader(`Buscando datos de ${coinName} en CoinGecko...`);
+  const data = await getCoinData(coinName);
+  hideLoader();
+  if (!data) { addMsg('bot',`⚠️ No encontré "${coinName}" en CoinGecko. Intenta con el nombre completo.`); return; }
+
+  const vr = parseFloat(data.volRatio)||0;
+  const c24 = data.c24h||0, c1h = data.c1h||0, c7d = data.c7d||0;
+  let score=0;
+  if (vr>20)score+=3; else if(vr>10)score+=2; else if(vr>5)score+=1;
+  if (Math.abs(c1h)>5)score+=3; else if(Math.abs(c1h)>2)score+=2; else if(Math.abs(c1h)>1)score+=1;
+  if (Math.abs(c24)>15)score+=3; else if(Math.abs(c24)>8)score+=2; else if(Math.abs(c24)>4)score+=1;
+  const up=(c1h>0?1:0)+(c24>0?1:0)+(c7d>0?1:0);
+  let signal='NEUTRO ⚪';
+  if (score>=7) signal = up>=2?'PUMP INMINENTE 🟢':'DUMP INMINENTE 🔴';
+  else if (score>=4) signal = up>=2?'ALERTA ALTA ⚠️':'VIGILANCIA 👁';
+
+  const ctx = `${data.name} ($${data.sym}) Rank#${data.rank}: Precio=${fpr(data.price)}, 1H=${fpc(c1h)}, 24H=${fpc(c24)}, 7D=${fpc(c7d)}, MCap=${fp(data.mcap)}, Vol=${fp(data.vol)}, Vol/MCap=${data.volRatio}%, ATH=${fpr(data.ath)}(${fpc(data.athChg)}desde ATH), H=${fpr(data.high)}, L=${fpr(data.low)}, Señal=${signal}, Score=${score}/9`;
+
+  const reply = await callAI(
+    'Eres RADAR G-7, analista crypto de élite. Responde en español con formato estructurado y análisis profundo basado en datos reales.',
+    `DATOS REALES COINGECKO:\n${ctx}\n\nHistórico: RAVE DAO(pump+6000%→dump-95% por insiders), Momentum MMT(TGE+4000%→-86%), Luna Terra(-99.99% stablecoin fallida).\n\nResponde con este formato EXACTO:\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n🛰️ RADAR G-7 — ANÁLISIS EN VIVO\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📌 ACTIVO: ${data.name} ($${data.sym}) — Rank #${data.rank}\n💰 PRECIO: ${fpr(data.price)}\n📊 1H: ${fpc(c1h)} | 24H: ${fpc(c24)} | 7D: ${fpc(c7d)}\n◈ SEÑAL: ${signal}\n◈ SCORE: ${score}/9 | PROBABILIDAD: [X%] [ALTA/MEDIA/BAJA]\n◈ VENTANA: [tiempo estimado]\n━━━ MÉTRICAS ━━━\nMCap: ${fp(data.mcap)} | Vol 24H: ${fp(data.vol)} | Vol/MCap: ${data.volRatio}%\nATH: ${fpr(data.ath)} | Desde ATH: ${fpc(data.athChg)}\n━━━ ANÁLISIS DEL PATRÓN ━━━\n[Explica la señal con los datos reales. ¿Hay similitud con algún caso histórico?]\n━━━ SEÑALES ━━━\n🔺 BULLISH: → [señal] → [señal]\n🔻 BEARISH: → [señal] → [señal]\n━━━ ESTRATEGIA ━━━\n🎯 TARGET: $[precio] (+[%]) | 🛑 STOP: $[precio] (-[%])\n⚖️ R/R: [X:1]\n━━━ VEREDICTO ━━━\n[3 líneas concretas]\nCONVICCIÓN RADAR G-7: ${score}/9\n⚠️ Informativo. No es consejo financiero. DYOR.`
+  );
+  addMsg('bot', reply);
+}
+
+// ── MARKET SCAN ──
+async function scanMarket(type) {
+  showLoader('Escaneando mercado en CoinGecko...');
+  const coins = await getTopMovers();
+  const trending = await getTrending();
+  hideLoader();
+  if (!coins.length) { addMsg('bot','⚠️ No se pudo conectar con CoinGecko. Intenta de nuevo.'); return; }
+
+  const analyzed = coins.map(c => {
+    const vr = c.market_cap>0?(c.total_volume/c.market_cap)*100:0;
+    const c1=(c.price_change_percentage_1h_in_currency||0), c24=(c.price_change_percentage_24h||0);
+    let sc=0;
+    if(vr>20)sc+=3;else if(vr>10)sc+=2;else if(vr>5)sc+=1;
+    if(Math.abs(c1)>5)sc+=3;else if(Math.abs(c1)>2)sc+=2;else if(Math.abs(c1)>1)sc+=1;
+    if(Math.abs(c24)>15)sc+=3;else if(Math.abs(c24)>8)sc+=2;else if(Math.abs(c24)>4)sc+=1;
+    return {coin:c,score:sc,up:(c1>0?1:0)+(c24>0?1:0),vr:vr.toFixed(1)};
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const d = await res.json();
-  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
-  return (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim() || 'Sin respuesta.';
+
+  let filtered;
+  if (type==='pump') filtered=analyzed.filter(a=>a.up>=1&&a.score>=3).sort((a,b)=>b.score-a.score).slice(0,5);
+  else if (type==='dump') filtered=analyzed.filter(a=>a.up<=0&&a.score>=3).sort((a,b)=>b.score-a.score).slice(0,5);
+  else filtered=analyzed.sort((a,b)=>b.score-a.score).slice(0,8);
+
+  const ctx = filtered.map(a=>{
+    const c=a.coin;
+    return `${c.name}($${c.symbol?.toUpperCase()}): $${c.current_price?.toFixed(4)||'?'}, 24H=${fpc(c.price_change_percentage_24h)}, Vol/MCap=${a.vr}%, Score=${a.score}/9`;
+  }).join('\n');
+
+  const reply = await callAI(
+    'Eres RADAR G-7. Analiza datos reales de CoinGecko y genera informe de señales pump/dump. Responde en español con formato estructurado.',
+    `DATOS REALES COINGECKO:\n${ctx}\n${trending?`TRENDING: ${trending}`:''}
+
+Genera informe RADAR G-7:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛰️ RADAR G-7 — ESCANEO DE MERCADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Para cada crypto: señal (PUMP/DUMP/ALERTA), precio, razón principal]
+━━━ TOP SEÑALES ━━━
+[Lista ordenada por urgencia con señal y acción sugerida]
+━━━ ESTADO DEL MERCADO ━━━
+[Tendencia general basada en los datos]
+⚠️ Informativo. DYOR.`
+  );
+  addMsg('bot', reply);
 }
 
-async function send(prompt, display) {
+// ── ACTIONS ──
+async function doSearch() {
+  const v=document.getElementById('sInput').value.trim();
+  if (!v||busy) return;
+  document.getElementById('sInput').value='';
+  setUI(true); addMsg('user',`Analizar: ${v}`);
+  try { await analyzeCoin(v); } catch(e) { hideLoader(); addMsg('bot',`⚠️ Error: ${e.message}`); } finally { setUI(false); }
+}
+
+async function searchCoin(coin) {
   if (busy) return;
-  setUI(true);
-  document.getElementById('sInput').value = '';
-  document.getElementById('chatInput').value = '';
-  addMsg('user', display || prompt.slice(0,60));
-  showLoader();
+  setUI(true); addMsg('user',`Analizar: ${coin}`);
+  try { await analyzeCoin(coin); } catch(e) { hideLoader(); addMsg('bot',`⚠️ Error: ${e.message}`); } finally { setUI(false); }
+}
+
+async function quickAction(type) {
+  if (busy) return;
+  const lbl={scan:'📡 Escanear mercado',pump:'🟢 Top pumps',dump:'🔴 Riesgo dump',meme:'🔥 Memecoins',dex:'📊 DexScreener',market:'🌐 Mercado global'};
+  setUI(true); addMsg('user',lbl[type]);
   try {
-    const reply = await callAI(prompt);
-    hideLoader();
-    addMsg('bot', reply);
-  } catch(e) {
-    hideLoader();
-    addMsg('bot', `⚠️ Error: ${e.message}\n\nIntenta de nuevo en unos segundos.`);
-  } finally {
-    setUI(false);
-  }
+    if (type==='scan'||type==='pump'||type==='dump') { await scanMarket(type); }
+    else if (type==='meme') {
+      showLoader('Buscando memecoins...');
+      const ids=['dogecoin','shiba-inu','pepe','bonk','floki'];
+      const coins=await Promise.all(ids.map(id=>fetch(`https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=false&developer_data=false`).then(r=>r.json()).catch(()=>null)));
+      hideLoader();
+      const ctx=coins.filter(Boolean).map(c=>{
+        const m=c.market_data; const vr=m?.total_volume?.usd&&m?.market_cap?.usd?((m.total_volume.usd/m.market_cap.usd)*100).toFixed(1):'?';
+        return `${c.name}: ${fpr(m?.current_price?.usd)}, 24H=${fpc(m?.price_change_percentage_24h)}, Vol/MCap=${vr}%`;
+      }).join('\n');
+      const reply=await callAI('Eres RADAR G-7. Analiza memecoins con datos reales. Responde en español.',`DATOS REALES:\n${ctx}\n\nGenera señales de pump/dump para cada memecoin con análisis basado en los datos.`);
+      addMsg('bot',reply);
+    }
+    else if (type==='dex') {
+      showLoader('Conectando con DexScreener...');
+      try {
+        const r=await fetch('https://api.dexscreener.com/token-boosts/top/v1');
+        const d=await r.json(); hideLoader();
+        const top=Array.isArray(d)?d.slice(0,8):[];
+        const ctx=top.map(t=>`Token en ${t.chainId||'?'}: boost=${t.totalAmount||'?'}`).join('\n');
+        const reply=await callAI('Eres RADAR G-7. Analiza tokens de DexScreener. Responde en español.',`TRENDING DEXSCREENER:\n${ctx}\n\nAnaliza cuáles tienen señales de movimiento próximo.`);
+        addMsg('bot',reply);
+      } catch { hideLoader(); addMsg('bot','⚠️ DexScreener no disponible. Usa el escaneo general de mercado.'); }
+    }
+    else if (type==='market') {
+      showLoader('Analizando mercado global...');
+      const coins=await getTopMovers(); const trending=await getTrending(); hideLoader();
+      const up=coins.filter(c=>c.price_change_percentage_24h>0).length;
+      const sorted=[...coins].sort((a,b)=>(b.price_change_percentage_24h||0)-(a.price_change_percentage_24h||0));
+      const best=sorted[0], worst=sorted[sorted.length-1];
+      const top5=coins.slice(0,5).map(c=>`${c.name}: ${fpc(c.price_change_percentage_24h)}`).join(' | ');
+      const reply=await callAI('Eres RADAR G-7. Genera análisis del estado del mercado crypto. Responde en español con formato estructurado.',
+        `DATOS REALES COINGECKO:\nTop 5: ${top5}\nAlcistas: ${up}/50\nMejor: ${best?.name} ${fpc(best?.price_change_percentage_24h)}\nPeor: ${worst?.name} ${fpc(worst?.price_change_percentage_24h)}\nTrending: ${trending}\n\nAnaliza el estado del mercado y da veredicto completo.`);
+      addMsg('bot',reply);
+    }
+  } catch(e) { hideLoader(); addMsg('bot',`⚠️ Error: ${e.message}`); } finally { setUI(false); }
 }
 
-function doSearch() {
-  const v = document.getElementById('sInput').value.trim();
+async function sendChat() {
+  const v=document.getElementById('chatInput').value.trim();
   if (!v||busy) return;
-  send(`Busca datos REALES Y ACTUALES de "${v}" en CoinGecko y CoinMarketCap ahora mismo. Precio exacto, cambios 1H/24H/7D, market cap, volumen 24H, ATH. Luego genera análisis completo pump/dump.${FORMAT}`, `Analizar: ${v}`);
+  document.getElementById('chatInput').value='';
+  setUI(true); addMsg('user',v); showLoader();
+  try {
+    const reply=await callAI('Eres RADAR G-7, analista crypto de élite. Responde en español de forma concisa y directa.',v);
+    hideLoader(); addMsg('bot',reply);
+  } catch(e) { hideLoader(); addMsg('bot',`⚠️ Error: ${e.message}`); } finally { setUI(false); }
 }
 
-function searchCoin(coin) {
-  if (busy) return;
-  send(`Busca datos reales de ${coin} en CoinGecko ahora mismo y genera análisis completo pump/dump.${FORMAT}`, `Analizar: ${coin}`);
-}
-
-function quickAction(type) {
-  if (busy) return;
-  send(PROMPTS[type], LABELS[type]);
-}
-
-function sendChat() {
-  const v = document.getElementById('chatInput').value.trim();
-  if (!v||busy) return;
-  send(`${v}\n\n${FORMAT}`, v);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const wb = document.getElementById('welcomeBubble');
-  wb.appendChild(renderBot('🛰️ RADAR G-7 — SISTEMA ACTIVO\n\nSistema de inteligencia predictiva crypto operacional.\n◈ Datos en tiempo real: CoinGecko · CoinMarketCap · DexScreener\n◈ Base histórica: RAVE DAO · Momentum MMT · Luna Terra\n◈ Detección automática de PUMP y DUMP\n\n━━━ CÓMO USAR ━━━\n→ Escribe cualquier crypto en el buscador → ANALIZAR\n→ Usa los botones de escaneo rápido para análisis del mercado\n→ Pregunta cualquier cosa en el campo de abajo\n\n¿Qué quieres analizar primero?'));
-
-  document.getElementById('chatInput').addEventListener('keydown', e => {
-    if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
-  });
-  document.getElementById('sInput').addEventListener('keydown', e => {
-    if (e.key==='Enter') doSearch();
-  });
+document.addEventListener('DOMContentLoaded',()=>{
+  const wb=document.getElementById('wb');
+  wb.appendChild(renderBot('🛰️ RADAR G-7 — SISTEMA ACTIVO\n\nSistema de inteligencia predictiva crypto operacional.\n◈ Datos en tiempo real: CoinGecko API Live\n◈ Análisis IA: Anthropic Claude\n◈ Base histórica: RAVE DAO · Momentum MMT · Luna Terra\n\n━━━ CÓMO USAR ━━━\n→ Escribe cualquier crypto en el buscador y presiona ANALIZAR\n→ Usa los botones de escaneo rápido para análisis del mercado\n→ El sistema obtiene precios reales antes de cada análisis\n\n¿Qué quieres analizar primero?'));
+  document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+  document.getElementById('sInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 });
 </script>
 </body>
