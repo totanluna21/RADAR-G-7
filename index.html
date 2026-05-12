@@ -940,25 +940,46 @@ async function renderDex(data) {
     if (t.tokenAddress) {
       try {
         const pair = await fetchPairInfo(t.tokenAddress, chain);
-        if (pair) {
-          tokenName = pair.baseToken?.name || tokenName || 'Token desconocido';
-          tokenSym = pair.baseToken?.symbol || tokenSym || t.tokenAddress.slice(0,8)+'...';
+        if (pair && pair.baseToken?.name) {
+          tokenName = pair.baseToken.name;
+          tokenSym = pair.baseToken.symbol || tokenSym;
           const p = parseFloat(pair.priceUsd||0);
-          priceStr = p ? (p < 0.000001 ? `$${p.toExponential(2)}` : p < 0.01 ? `$${p.toFixed(6)}` : p < 1 ? `$${p.toFixed(4)}` : `$${p.toLocaleString('en-US',{maximumFractionDigits:4})}`) : '';
+          priceStr = p ? (p<0.000001?`$${p.toExponential(2)}`:p<0.01?`$${p.toFixed(6)}`:p<1?`$${p.toFixed(4)}`:`$${p.toLocaleString('en-US',{maximumFractionDigits:4})}`) : '';
           liqUsd = pair.liquidity?.usd || 0;
           volUsd = pair.volume?.h24 || 0;
-          vol = volUsd ? `Vol $${volUsd>=1e6?(volUsd/1e6).toFixed(1)+'M':volUsd>=1e3?(volUsd/1e3).toFixed(0)+'K':volUsd.toFixed(0)}` : '';
-          liq = liqUsd ? `Liq $${liqUsd>=1e6?(liqUsd/1e6).toFixed(1)+'M':liqUsd>=1e3?(liqUsd/1e3).toFixed(0)+'K':liqUsd.toFixed(0)}` : '';
+          vol = volUsd?`Vol $${volUsd>=1e6?(volUsd/1e6).toFixed(1)+'M':volUsd>=1e3?(volUsd/1e3).toFixed(0)+'K':volUsd.toFixed(0)}`:'';
+          liq = liqUsd?`Liq $${liqUsd>=1e6?(liqUsd/1e6).toFixed(1)+'M':liqUsd>=1e3?(liqUsd/1e3).toFixed(0)+'K':liqUsd.toFixed(0)}`:'';
           priceChg = pair.priceChange?.h24 ?? null;
           priceChgH1 = pair.priceChange?.h1 ?? null;
-          priceChgH6 = pair.priceChange?.h6 ?? null;
           pairUrl = pair.url || `https://dexscreener.com/${chain}/${t.tokenAddress}`;
+        } else {
+          // Fallback: search by address
+          try {
+            const sr = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${t.tokenAddress}`);
+            const sd = await sr.json();
+            const fp2 = sd.pairs?.[0];
+            if (fp2) {
+              tokenName = fp2.baseToken?.name || '';
+              tokenSym = fp2.baseToken?.symbol || '';
+              const p = parseFloat(fp2.priceUsd||0);
+              priceStr = p?(p<0.01?`$${p.toFixed(6)}`:`$${p.toFixed(4)}`):'';
+              liqUsd = fp2.liquidity?.usd || 0;
+              volUsd = fp2.volume?.h24 || 0;
+              vol = volUsd?`Vol $${volUsd>=1e6?(volUsd/1e6).toFixed(1)+'M':volUsd>=1e3?(volUsd/1e3).toFixed(0)+'K':volUsd.toFixed(0)}`:'';
+              liq = liqUsd?`Liq $${liqUsd>=1e6?(liqUsd/1e6).toFixed(1)+'M':liqUsd>=1e3?(liqUsd/1e3).toFixed(0)+'K':liqUsd.toFixed(0)}`:'';
+              priceChg = fp2.priceChange?.h24 ?? null;
+              priceChgH1 = fp2.priceChange?.h1 ?? null;
+              pairUrl = fp2.url || `https://dexscreener.com/${chain}/${t.tokenAddress}`;
+            }
+          } catch(e2) {}
         }
       } catch(e) {}
     }
 
-    if (!tokenName) tokenName = 'Token desconocido';
-    if (!tokenSym) tokenSym = t.tokenAddress ? t.tokenAddress.slice(0,8)+'...' : '?';
+    // Last resort display
+    if (!tokenName) tokenName = t.description || t.tokenName || '';
+    if (!tokenSym) tokenSym = t.tokenAddress ? t.tokenAddress.slice(0,6)+'...'+t.tokenAddress.slice(-4) : '?';
+    if (!tokenName) tokenName = `Contrato ${t.tokenAddress?.slice(0,8)||'desconocido'}...`;
 
     // Compute real score
     const scoreNorm = calcDexScore(sig.boost, priceChg, liqUsd, volUsd);
