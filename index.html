@@ -347,7 +347,7 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="tb-center">
     <div class="tb-search">
       <span style="color:var(--text3);font-size:13px">⌕</span>
-      <input id="topSearch" type="text" placeholder="Buscar token..." onkeydown="if(event.key==='Enter')topSearch()"/>
+      <input id="topSearch" type="text" placeholder="Buscar token, símbolo o pega un contrato 0x..." onkeydown="if(event.key==='Enter')topSearch()"/>
     </div>
   </div>
   <div class="tb-right">
@@ -822,7 +822,7 @@ async function loadDex(){
       rawData=await fetchDexNew();
     }
     dexData=rawData;
-    renderDex(rawData);
+    await renderDex(rawData);
   }catch(e){
     el.innerHTML=`<div class="empty" style="grid-column:1/-1">Error conectando con DexScreener. Intenta de nuevo.</div>`;
   }
@@ -846,34 +846,85 @@ function analyzeDexToken(t){
   return{type,label,color,boost};
 }
 
-function renderDex(data){
-  const el=document.getElementById('dexGrid');el.innerHTML='';
-  if(!data.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No hay datos disponibles</div>';return;}
-  data.slice(0,20).forEach(t=>{
-    const sig=analyzeDexToken(t);
-    const card=document.createElement('div');
-    card.className=`dex-card ${sig.type}`;
-    const sym=t.tokenAddress?t.tokenAddress.slice(0,6)+'...':t.symbol||'TOKEN';
-    const chain=t.chainId||'—';
-    card.innerHTML=`
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div><span class="dex-sym">${sym}</span><span class="dex-chain">${chain}</span></div>
-        <span class="pill ${sig.type==='new'?'watch':sig.type}">${sig.label}</span>
+async function fetchPairInfo(addr, chain) {
+  try {
+    const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`);
+    const d = await r.json();
+    return d.pairs?.[0] || null;
+  } catch { return null; }
+}
+
+async function renderDex(data) {
+  const el = document.getElementById('dexGrid');
+  el.innerHTML = '';
+  if (!data.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">No hay datos disponibles de DexScreener</div>'; return; }
+
+  for (const t of data.slice(0, 20)) {
+    const sig = analyzeDexToken(t);
+    const card = document.createElement('div');
+    const chain = t.chainId || '—';
+
+    // Try to get real token name/symbol from pair data
+    let tokenName = t.tokenName || t.description || '';
+    let tokenSym = t.symbol || '';
+    let price = '';
+    let vol = '';
+    let liq = '';
+    let priceChg = null;
+
+    if (t.tokenAddress) {
+      try {
+        const pair = await fetchPairInfo(t.tokenAddress, chain);
+        if (pair) {
+          tokenName = pair.baseToken?.name || tokenName || 'Token desconocido';
+          tokenSym = pair.baseToken?.symbol || tokenSym || t.tokenAddress.slice(0,8)+'...';
+          price = pair.priceUsd ? `$${parseFloat(pair.priceUsd).toFixed(6)}` : '';
+          vol = pair.volume?.h24 ? `Vol: $${(pair.volume.h24/1000).toFixed(1)}K` : '';
+          liq = pair.liquidity?.usd ? `Liq: $${(pair.liquidity.usd/1000).toFixed(1)}K` : '';
+          priceChg = pair.priceChange?.h24 || null;
+        }
+      } catch(e) {}
+    }
+
+    if (!tokenName) tokenName = 'Token desconocido';
+    if (!tokenSym) tokenSym = t.tokenAddress ? t.tokenAddress.slice(0,8)+'...' : '?';
+
+    // Re-analyze with real price change data
+    let sigType = sig.type, sigLabel = sig.label;
+    if (priceChg !== null) {
+      if (priceChg > 30 && sig.boost > 200) { sigType = 'pump'; sigLabel = 'PUMP POTENCIAL'; }
+      else if (priceChg < -20) { sigType = 'dump'; sigLabel = 'DUMP ACTIVO'; }
+      else if (priceChg > 50) { sigType = 'rug'; sigLabel = 'RUG RISK 🚨'; }
+    }
+    const pillCls = sigType === 'new' ? 'watch' : sigType;
+    const chgColor = priceChg === null ? 'var(--text3)' : priceChg >= 0 ? 'var(--green)' : 'var(--red)';
+    const chgTxt = priceChg !== null ? `${priceChg > 0 ? '+' : ''}${priceChg.toFixed(2)}% 24H` : '';
+
+    card.className = `dex-card ${sigType}`;
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="min-width:0">
+          <div class="dex-sym">${tokenSym}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tokenName}</div>
+          <span class="dex-chain">${chain}</span>
+        </div>
+        <span class="pill ${pillCls}" style="flex-shrink:0">${sigLabel}</span>
       </div>
+      ${price ? `<div style="font-family:'DM Mono',monospace;font-size:13px;margin-top:8px;color:var(--text)">${price} <span style="color:${chgColor};font-size:11px">${chgTxt}</span></div>` : ''}
       <div class="dex-metrics">
         <span class="dex-m">Boost: ${sig.boost}</span>
-        <span class="dex-m">${chain}</span>
-        ${t.totalAmount?`<span class="dex-m">Vol: $${t.totalAmount?.toLocaleString()}</span>`:''}
+        ${vol ? `<span class="dex-m">${vol}</span>` : ''}
+        ${liq ? `<span class="dex-m">${liq}</span>` : ''}
       </div>
       <div class="dex-why">
-        ${sig.type==='rug'?'⚠️ Token nuevo con boost alto — Riesgo de pump & dump':sig.type==='pump'?'⚡ Alto nivel de boost — Posible pump en desarrollo':sig.type==='alert'?'👁 Actividad inusual detectada':'🆕 Token recientemente listado en DEX'}
+        ${sigType==='rug'?'🚨 Pump extremo + liquidez baja = riesgo rug pull':sigType==='pump'?'⚡ Alto boost + precio subiendo = pump potencial':sigType==='dump'?'🔴 Precio cayendo con volumen alto = dump activo':'🆕 Token nuevo en DEX — monitorear actividad'}
       </div>
-      <div style="margin-top:8px;display:flex;gap:6px">
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
         <a href="https://dexscreener.com/${chain}/${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">DexScreener ↗</a>
-        ${t.tokenAddress?`<a href="https://etherscan.io/address/${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">Chain ↗</a>`:''}
+        ${t.tokenAddress ? `<a href="https://dexscreener.com/search?q=${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">Buscar par ↗</a>` : ''}
       </div>`;
     el.appendChild(card);
-  });
+  }
 }
 
 // ═══════════════
@@ -1028,33 +1079,31 @@ function renderTab(tab){
       });
     }).catch(()=>{aiBlock.textContent='Error al generar análisis IA.';});
 
-  } else if(tab==='chart'){
-    const sym=coin.symbol?.toUpperCase();
-    // Use TradingView widget correctly
-    body.innerHTML=`
-      <div><div class="det-sec-title">Gráfica TradingView · ${sym}/USDT · Tiempo Real</div>
-      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;height:420px">
-        <div class="tradingview-widget-container" style="height:420px;width:100%">
-          <div class="tradingview-widget-container__widget" style="height:100%"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-          {
-            "autosize": true,
-            "symbol": "BINANCE:${sym}USDT",
-            "interval": "15",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "es",
-            "withdateranges": true,
-            "hide_side_toolbar": false,
-            "allow_symbol_change": false,
-            "studies": ["RSI@tv-basicstudies","MACD@tv-basicstudies","BB@tv-basicstudies"],
-            "support_host": "https://www.tradingview.com"
-          }
-          <\/script>
-        </div>
-      </div>
-      <div style="margin-top:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">📊 Incluye RSI · MACD · Bandas Bollinger · Datos en tiempo real de Binance · Si no carga: <a href="https://www.tradingview.com/symbols/${sym}USDT" target="_blank" style="color:var(--blue)">Ver en TradingView ↗</a></div></div>`;
+    } else if(tab==='chart'){
+    const sym = coin.symbol?.toUpperCase();
+    const tvSym = encodeURIComponent('BINANCE:' + sym + 'USDT');
+    const iframeSrc = 'https://www.tradingview.com/widgetembed/?frameElementId=tv_' + sym +
+      '&symbol=' + tvSym +
+      '&interval=15&theme=dark&style=1&locale=es' +
+      '&toolbar_bg=%230d1118&enable_publishing=false' +
+      '&hide_side_toolbar=0&allow_symbol_change=0' +
+      '&studies=RSI%40tv-basicstudies%2CMACD%40tv-basicstudies%2CBB%40tv-basicstudies' +
+      '&save_image=false&hide_volume=false';
+
+    const chartWrap = document.createElement('div');
+    chartWrap.innerHTML =
+      '<div class="det-sec-title">Gráfica TradingView · ' + sym + '/USDT · Tiempo Real</div>' +
+      '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;height:440px;width:100%;background:var(--bg3)">' +
+        '<iframe src="' + iframeSrc + '" ' +
+          'style="width:100%;height:100%;border:none;display:block" ' +
+          'frameborder="0" scrolling="no" allowfullscreen>' +
+        '</iframe>' +
+      '</div>' +
+      '<div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">' +
+        '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">📊 RSI · MACD · Bollinger Bands · Datos Binance en vivo</div>' +
+        '<a href="https://www.tradingview.com/chart/?symbol=BINANCE:' + sym + 'USDT" target="_blank" class="btn" style="font-size:9px;padding:4px 10px">Abrir TradingView ↗</a>' +
+      '</div>';
+    body.appendChild(chartWrap);
 
   } else if(tab==='timeline'){
     const events=[
@@ -1209,13 +1258,87 @@ function showPage(p){
   if(p==='dex'&&!dexData.length)loadDex();
 }
 
-function topSearch(){
-  const v=document.getElementById('topSearch').value.trim().toLowerCase();
-  if(!v)return;
-  const found=allCoins.find(c=>c.symbol?.toLowerCase()===v||c.name?.toLowerCase().includes(v));
-  if(found){const s=calcSignal(found);showPage('tokens');openDetail(found,s);}
-  else{showPage('chat');document.getElementById('chatInp').value=`Analiza ${v}`;sendChat();}
-  document.getElementById('topSearch').value='';
+async function topSearch(){
+  const raw = document.getElementById('topSearch').value.trim();
+  if(!raw) return;
+  const v = raw.toLowerCase();
+  document.getElementById('topSearch').value = '';
+
+  // Detect if it's a contract address (long hex string)
+  const isContract = /^0x[a-fA-F0-9]{20,}$/.test(raw) || raw.length > 20 && /^[a-zA-Z0-9]{32,}$/.test(raw);
+
+  if(isContract) {
+    // Look up contract on DexScreener
+    showPage('chat');
+    const inp = document.getElementById('chatInp');
+    inp.value = '';
+    addChat('user', 'Analizando contrato: ' + raw.slice(0,12) + '...');
+    try {
+      const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + raw);
+      const d = await r.json();
+      const pair = d.pairs?.[0];
+      if(pair) {
+        const name = pair.baseToken?.name || 'Token';
+        const sym = pair.baseToken?.symbol || '?';
+        const price = pair.priceUsd ? '$' + parseFloat(pair.priceUsd).toFixed(6) : 'N/A';
+        const chg24 = pair.priceChange?.h24 ? (pair.priceChange.h24 > 0 ? '+' : '') + pair.priceChange.h24.toFixed(2) + '%' : 'N/A';
+        const vol = pair.volume?.h24 ? '$' + (pair.volume.h24/1000).toFixed(1) + 'K' : 'N/A';
+        const liq = pair.liquidity?.usd ? '$' + (pair.liquidity.usd/1000).toFixed(1) + 'K' : 'N/A';
+        const chain = pair.chainId || '?';
+        const dex = pair.dexId || '?';
+
+        // Determine category
+        const symLow = sym.toLowerCase();
+        let category = 'Token';
+        if(['doge','shib','pepe','bonk','floki','wif','meme','moon','inu','cat','dog','baby','safe','elon'].some(k=>symLow.includes(k))) category = '🐸 Memecoin';
+        else if(liq && parseFloat(liq.replace(/[$K]/g,'')) < 100) category = '⚠️ Liquidez muy baja';
+        else if(pair.volume?.h24 > 1000000) category = '📈 Alto volumen';
+
+        // Signal analysis
+        const boost = parseFloat(chg24) || 0;
+        let signal = '⚪ NEUTRO';
+        if(boost > 30) signal = boost > 50 ? '🚨 RUG PULL RISK — Pump extremo' : '🟢 PUMP POTENCIAL';
+        else if(boost < -20) signal = '🔴 DUMP ACTIVO';
+
+        const msg = `🛰️ RADAR G-7 — ANÁLISIS DE CONTRATO
+
+📌 ${name} ($${sym})
+🔗 Contrato: ${raw.slice(0,12)}...
+🏷️ Categoría: ${category}
+⛓️ Chain: ${chain} · DEX: ${dex}
+
+💰 Precio: ${price}
+📊 Cambio 24H: ${chg24}
+💧 Liquidez: ${liq}
+📦 Vol 24H: ${vol}
+
+◈ SEÑAL: ${signal}
+
+🔍 Ver más: https://dexscreener.com/${chain}/${raw}`;
+        addChat('bot', msg);
+      } else {
+        // Not found on DexScreener, send to AI
+        document.getElementById('chatInp').value = `Busca información sobre este contrato: ${raw}. ¿Qué token es? ¿Es memecoin, DeFi, u otra categoría? ¿Hay señales de pump o rug pull?`;
+        sendChat();
+      }
+    } catch(e) {
+      document.getElementById('chatInp').value = `Analiza el contrato ${raw}: ¿qué token es? ¿Es memecoin? ¿Hay señales de pump o rug?`;
+      sendChat();
+    }
+    return;
+  }
+
+  // Normal search by name/symbol
+  const found = allCoins.find(c => c.symbol?.toLowerCase() === v || c.name?.toLowerCase().includes(v));
+  if(found) {
+    const s = calcSignal(found);
+    showPage('tokens');
+    openDetail(found, s);
+  } else {
+    showPage('chat');
+    document.getElementById('chatInp').value = `Analiza ${raw}: ¿qué es? ¿Es memecoin, DeFi u otra categoría? ¿Hay señales de pump o dump? Busca datos reales.`;
+    sendChat();
+  }
 }
 
 async function refreshAll(){
