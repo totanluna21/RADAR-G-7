@@ -857,7 +857,7 @@ function buildDexScoreChart(scoreNorm, sigColor) {
     { l:'6H', v: Math.max(5, scoreNorm - 5) },
     { l:'HOY', v: scoreNorm },
   ];
-  const W=260, H=80, pad=18;
+  const W=220, H=60, pad=14;
   const toX = (i) => pad + (i/(pts.length-1))*(W-pad*2);
   const toY = (v) => H - pad - ((v/100)*(H-pad*2));
   const coords = pts.map((p,i) => ({...p, x:toX(i), y:toY(p.v)}));
@@ -984,74 +984,46 @@ async function renderDex(data) {
     const scoreChart = buildDexScoreChart(scoreNorm, sigColor);
 
     card.className = `dex-card ${sigType}`;
-    card.innerHTML = `
-      <!-- Header -->
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+
+    const zoneBar = [
+      {l:'PUMP',c:'var(--green)',a:scoreNorm>=85},
+      {l:'ALERTA',c:'var(--yellow)',a:scoreNorm>=65&&scoreNorm<85},
+      {l:'WATCH',c:'var(--blue)',a:scoreNorm>=50&&scoreNorm<65},
+      {l:'NEUTRO',c:'var(--text3)',a:scoreNorm<50},
+    ].map(z=>`<div style="flex:1;text-align:center;padding:3px 2px;border-radius:3px;background:${z.a?z.c+'18':'transparent'};border:1px solid ${z.a?z.c+'44':'var(--border)'}"><div style="font-family:'DM Mono',monospace;font-size:7px;color:${z.a?z.c:'var(--text3)'};">${z.l}${z.a?' ◄':''}</div></div>`).join('');
+
+    card.innerHTML =
+      `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
         <div style="min-width:0;flex:1">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span class="dex-sym">${tokenSym}</span>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+            <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${tokenSym}</span>
             <span class="dex-chain">${chain}</span>
+            <span class="pill ${pillCls}" style="font-size:8px;padding:1px 6px">${sigLabel}</span>
           </div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tokenName}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;font-weight:500">${tokenName}</div>
+          ${priceStr?`<div style="font-family:'DM Mono',monospace;font-size:11px;margin-top:3px">${priceStr}${priceChg!==null?` <span style="color:${priceChg>=0?'var(--green)':'var(--red)'}">${priceChg>=0?'+':''}${priceChg.toFixed(1)}%</span>`:''}${priceChgH1!==null?` <span style="color:${priceChgH1>=0?'var(--green)':'var(--red)'}">1H ${priceChgH1>=0?'+':''}${priceChgH1.toFixed(1)}%</span>`:''}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${sigColor};line-height:1">${scoreNorm}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${sigColor};line-height:1">${scoreNorm}</div>
           <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">/100</div>
         </div>
       </div>
-
-      <!-- Price + changes -->
-      ${priceStr ? `<div style="margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-        <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text)">${priceStr}</span>
-        ${priceChgH1!==null?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:${priceChgH1>=0?'var(--green)':'var(--red)'}">${priceChgH1>=0?'+':''}${priceChgH1.toFixed(2)}% 1H</span>`:''}
-        ${priceChg!==null?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:${priceChg>=0?'var(--green)':'var(--red)'}">${priceChg>=0?'+':''}${priceChg.toFixed(2)}% 24H</span>`:''}
-      </div>` : ''}
-
-      <!-- Score chart -->
-      ${scoreChart}
-
-      <!-- Zone indicator -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px">
-        ${[
-          {range:'85-100', label:'PUMP', color:'var(--green)', active: scoreNorm>=85},
-          {range:'65-84',  label:'ALERTA', color:'var(--yellow)', active: scoreNorm>=65&&scoreNorm<85},
-          {range:'50-64',  label:'WATCH', color:'var(--blue)', active: scoreNorm>=50&&scoreNorm<65},
-          {range:'0-49',   label:'NEUTRO', color:'var(--text3)', active: scoreNorm<50},
-        ].map(z=>`<div style="text-align:center;padding:4px 2px;border-radius:3px;background:${z.active?z.color+'18':'transparent'};border:1px solid ${z.active?z.color+'44':'var(--border)'}">
-          <div style="font-family:'DM Mono',monospace;font-size:7px;color:${z.active?z.color:'var(--text3)'};">${z.label}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:7px;color:${z.active?z.color:'var(--text3)'};">${z.range}</div>
-          ${z.active?'<div style="font-size:8px">◄</div>':''}
-        </div>`).join('')}
+      <div style="margin-top:7px">${scoreChart}</div>
+      <div style="display:flex;gap:3px;margin-top:5px">${zoneBar}</div>
+      <div style="margin-top:5px;background:${entryColor}18;border:1px solid ${entryColor}33;border-radius:4px;padding:5px 9px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:10px;color:${entryColor};font-weight:600">${entryAction}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:${entryColor};font-weight:700">${entryPct}</span>
       </div>
-
-      <!-- Entry recommendation -->
-      <div style="margin-top:8px;background:${entryColor}18;border:1px solid ${entryColor}33;border-radius:5px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:11px;color:${entryColor};font-weight:600">${entryAction}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:10px;color:${entryColor};font-weight:700">${entryPct} capital</span>
+      <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
+        <span class="dex-m">Boost ${sig.boost}</span>${vol?`<span class="dex-m">${vol}</span>`:''}${liq?`<span class="dex-m">${liq}</span>`:''}
       </div>
-
-      <!-- Metrics -->
-      <div class="dex-metrics" style="margin-top:8px">
-        <span class="dex-m">Boost: ${sig.boost}</span>
-        ${vol ? `<span class="dex-m">${vol}</span>` : ''}
-        ${liq ? `<span class="dex-m">${liq}</span>` : ''}
-      </div>
-
-      <!-- Why flagged -->
-      <div class="dex-why">
-        ${sigType==='rug'?'🚨 Pump extremo + liquidez muy baja = alto riesgo rug pull. NO ENTRAR.':
-          sigType==='pump'?'⚡ Score alto + precio subiendo + boost elevado = pump potencial. Monitorear de cerca.':
-          sigType==='dump'?'🔴 Precio cayendo con volumen alto. Posible dump en curso.':
-          sigType==='alert'?'⚠️ Actividad inusual detectada. Vigilar para posible entrada.':
-          '🆕 Token nuevo en DEX. Acumular datos antes de tomar decisión.'}
-      </div>
-
-      <!-- Links -->
-      <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
-        <a href="${pairUrl || 'https://dexscreener.com/' + chain + '/' + t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">📡 DexScreener ↗</a>
-        ${t.tokenAddress ? `<a href="https://dexscreener.com/search?q=${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">🔍 Ver par ↗</a>` : ''}
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">${sigType==='rug'?'🚨 Riesgo rug pull — NO ENTRAR':sigType==='pump'?'⚡ Pump potencial detectado':sigType==='dump'?'🔴 Dump activo':sigType==='alert'?'⚠️ Actividad inusual':'🆕 Token nuevo en DEX'}</div>
+      <div style="margin-top:7px;display:flex;gap:5px">
+        <a href="${pairUrl||'https://dexscreener.com/'+chain+'/'+t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px;flex:1;text-align:center">📡 DexScreener</a>
+        ${t.tokenAddress?`<a href="https://dexscreener.com/search?q=${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">🔍</a>`:''}
       </div>`;
-    el.appendChild(card);
+
+        el.appendChild(card);
   }
 }
 
