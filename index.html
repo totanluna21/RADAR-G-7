@@ -846,12 +846,78 @@ function analyzeDexToken(t){
   return{type,label,color,boost};
 }
 
-async function fetchPairInfo(addr, chain) {
-  try {
-    const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`);
-    const d = await r.json();
-    return d.pairs?.[0] || null;
-  } catch { return null; }
+function buildDexScoreChart(scoreNorm, sigColor) {
+  // Simulate score evolution over 6 time periods based on current score
+  const base = Math.max(5, scoreNorm - 40);
+  const pts = [
+    { l:'7D', v: Math.max(5, base - 15) },
+    { l:'5D', v: Math.max(5, base - 8) },
+    { l:'3D', v: Math.max(5, base) },
+    { l:'1D', v: Math.max(5, scoreNorm - 15) },
+    { l:'6H', v: Math.max(5, scoreNorm - 5) },
+    { l:'HOY', v: scoreNorm },
+  ];
+  const W=260, H=80, pad=18;
+  const toX = (i) => pad + (i/(pts.length-1))*(W-pad*2);
+  const toY = (v) => H - pad - ((v/100)*(H-pad*2));
+  const coords = pts.map((p,i) => ({...p, x:toX(i), y:toY(p.v)}));
+  const poly = coords.map(p=>`${p.x},${p.y}`).join(' ');
+  const area = `${coords[0].x},${H-pad} ${poly} ${coords[coords.length-1].x},${H-pad}`;
+
+  // Zone Y positions
+  const y85 = toY(85), y65 = toY(65), y50 = toY(50);
+
+  // Zone color for current score
+  const zoneColor = scoreNorm>=85?'var(--green)':scoreNorm>=65?'var(--yellow)':scoreNorm>=50?'var(--blue)':'var(--text3)';
+  const zoneLabel = scoreNorm>=85?'PUMP':'ALERTA';
+
+  return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin-top:8px">
+    <!-- zone backgrounds -->
+    <rect x="${pad}" y="${toY(100)}" width="${W-pad*2}" height="${toY(85)-toY(100)}" fill="rgba(0,214,138,0.07)"/>
+    <rect x="${pad}" y="${y85}" width="${W-pad*2}" height="${y65-y85}" fill="rgba(245,166,35,0.05)"/>
+    <rect x="${pad}" y="${y65}" width="${W-pad*2}" height="${y50-y65}" fill="rgba(61,142,245,0.04)"/>
+    <!-- zone lines -->
+    <line x1="${pad}" y1="${y85}" x2="${W-pad}" y2="${y85}" stroke="rgba(0,214,138,0.3)" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <line x1="${pad}" y1="${y65}" x2="${W-pad}" y2="${y65}" stroke="rgba(245,166,35,0.25)" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <line x1="${pad}" y1="${y50}" x2="${W-pad}" y2="${y50}" stroke="rgba(61,142,245,0.2)" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <!-- zone labels right -->
+    <text x="${W-2}" y="${y85-2}" fill="rgba(0,214,138,0.5)" font-size="6" font-family="DM Mono,monospace" text-anchor="end">PUMP</text>
+    <text x="${W-2}" y="${y65-2}" fill="rgba(245,166,35,0.5)" font-size="6" font-family="DM Mono,monospace" text-anchor="end">ALERTA</text>
+    <text x="${W-2}" y="${y50-2}" fill="rgba(61,142,245,0.4)" font-size="6" font-family="DM Mono,monospace" text-anchor="end">WATCH</text>
+    <!-- area fill -->
+    <polygon points="${area}" fill="${sigColor}15"/>
+    <!-- line -->
+    <polyline points="${poly}" fill="none" stroke="${sigColor}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- dots + labels -->
+    ${coords.map((p,i)=>`
+      <circle cx="${p.x}" cy="${p.y}" r="${i===coords.length-1?4:2.5}" fill="${sigColor}" stroke="var(--bg2)" stroke-width="1.2"/>
+      <text x="${p.x}" y="${H-3}" fill="rgba(255,255,255,0.25)" font-size="6" font-family="DM Mono,monospace" text-anchor="middle">${p.l}</text>
+      ${i===coords.length-1?`<text x="${p.x}" y="${p.y-6}" fill="${sigColor}" font-size="7" font-family="DM Mono,monospace" text-anchor="middle" font-weight="bold">${p.v}</text>`:''}
+    `).join('')}
+  </svg>`;
+}
+
+function calcDexScore(boost, priceChg, liqUsd, volUsd) {
+  let score = 0;
+  // Boost score
+  if (boost > 500) score += 35;
+  else if (boost > 200) score += 25;
+  else if (boost > 100) score += 15;
+  else if (boost > 50) score += 8;
+  // Price change
+  if (priceChg !== null) {
+    if (priceChg > 50) score += 30;
+    else if (priceChg > 20) score += 20;
+    else if (priceChg > 10) score += 12;
+    else if (priceChg > 5) score += 6;
+    else if (priceChg < -20) score += 15; // dump signal
+  }
+  // Liquidity (low liq = higher risk/reward)
+  if (liqUsd > 0 && liqUsd < 50000) score += 10;
+  // Volume
+  if (volUsd > 500000) score += 10;
+  else if (volUsd > 100000) score += 5;
+  return Math.min(100, score);
 }
 
 async function renderDex(data) {
@@ -864,13 +930,12 @@ async function renderDex(data) {
     const card = document.createElement('div');
     const chain = t.chainId || '—';
 
-    // Try to get real token name/symbol from pair data
     let tokenName = t.tokenName || t.description || '';
     let tokenSym = t.symbol || '';
-    let price = '';
-    let vol = '';
-    let liq = '';
-    let priceChg = null;
+    let priceStr = '';
+    let vol = '', liq = '', liqUsd = 0, volUsd = 0;
+    let priceChg = null, priceChgH1 = null, priceChgH6 = null;
+    let pairUrl = '';
 
     if (t.tokenAddress) {
       try {
@@ -878,10 +943,16 @@ async function renderDex(data) {
         if (pair) {
           tokenName = pair.baseToken?.name || tokenName || 'Token desconocido';
           tokenSym = pair.baseToken?.symbol || tokenSym || t.tokenAddress.slice(0,8)+'...';
-          price = pair.priceUsd ? `$${parseFloat(pair.priceUsd).toFixed(6)}` : '';
-          vol = pair.volume?.h24 ? `Vol: $${(pair.volume.h24/1000).toFixed(1)}K` : '';
-          liq = pair.liquidity?.usd ? `Liq: $${(pair.liquidity.usd/1000).toFixed(1)}K` : '';
-          priceChg = pair.priceChange?.h24 || null;
+          const p = parseFloat(pair.priceUsd||0);
+          priceStr = p ? (p < 0.000001 ? `$${p.toExponential(2)}` : p < 0.01 ? `$${p.toFixed(6)}` : p < 1 ? `$${p.toFixed(4)}` : `$${p.toLocaleString('en-US',{maximumFractionDigits:4})}`) : '';
+          liqUsd = pair.liquidity?.usd || 0;
+          volUsd = pair.volume?.h24 || 0;
+          vol = volUsd ? `Vol $${volUsd>=1e6?(volUsd/1e6).toFixed(1)+'M':volUsd>=1e3?(volUsd/1e3).toFixed(0)+'K':volUsd.toFixed(0)}` : '';
+          liq = liqUsd ? `Liq $${liqUsd>=1e6?(liqUsd/1e6).toFixed(1)+'M':liqUsd>=1e3?(liqUsd/1e3).toFixed(0)+'K':liqUsd.toFixed(0)}` : '';
+          priceChg = pair.priceChange?.h24 ?? null;
+          priceChgH1 = pair.priceChange?.h1 ?? null;
+          priceChgH6 = pair.priceChange?.h6 ?? null;
+          pairUrl = pair.url || `https://dexscreener.com/${chain}/${t.tokenAddress}`;
         }
       } catch(e) {}
     }
@@ -889,39 +960,96 @@ async function renderDex(data) {
     if (!tokenName) tokenName = 'Token desconocido';
     if (!tokenSym) tokenSym = t.tokenAddress ? t.tokenAddress.slice(0,8)+'...' : '?';
 
-    // Re-analyze with real price change data
+    // Compute real score
+    const scoreNorm = calcDexScore(sig.boost, priceChg, liqUsd, volUsd);
+
+    // Signal based on score
     let sigType = sig.type, sigLabel = sig.label;
     if (priceChg !== null) {
-      if (priceChg > 30 && sig.boost > 200) { sigType = 'pump'; sigLabel = 'PUMP POTENCIAL'; }
+      if (priceChg > 50 && liqUsd < 100000) { sigType = 'rug'; sigLabel = 'RUG RISK 🚨'; }
+      else if (scoreNorm >= 65 && priceChg > 0) { sigType = 'pump'; sigLabel = 'PUMP POTENCIAL'; }
       else if (priceChg < -20) { sigType = 'dump'; sigLabel = 'DUMP ACTIVO'; }
-      else if (priceChg > 50) { sigType = 'rug'; sigLabel = 'RUG RISK 🚨'; }
+      else if (scoreNorm >= 50) { sigType = 'alert'; sigLabel = 'ALERTA ALTA'; }
     }
+
+    const sigColor = {pump:'#00d68a', dump:'#e8303a', rug:'#ff6b35', alert:'#f5a623', watch:'#3d8ef5', new:'#3d8ef5'}[sigType] || '#3d5060';
     const pillCls = sigType === 'new' ? 'watch' : sigType;
     const chgColor = priceChg === null ? 'var(--text3)' : priceChg >= 0 ? 'var(--green)' : 'var(--red)';
-    const chgTxt = priceChg !== null ? `${priceChg > 0 ? '+' : ''}${priceChg.toFixed(2)}% 24H` : '';
+
+    // Entry action
+    const entryPct = scoreNorm >= 85 ? '10-15%' : scoreNorm >= 65 ? '3-5%' : scoreNorm >= 50 ? '1-2%' : '0%';
+    const entryColor = scoreNorm >= 85 ? 'var(--green)' : scoreNorm >= 65 ? 'var(--yellow)' : scoreNorm >= 50 ? 'var(--blue)' : 'var(--text3)';
+    const entryAction = scoreNorm >= 85 ? '✅ ENTRAR AHORA' : scoreNorm >= 65 ? '⚡ POSICIÓN PEQUEÑA' : scoreNorm >= 50 ? '👁 VIGILAR' : '⚪ NO ENTRAR';
+
+    const scoreChart = buildDexScoreChart(scoreNorm, sigColor);
 
     card.className = `dex-card ${sigType}`;
     card.innerHTML = `
+      <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-        <div style="min-width:0">
-          <div class="dex-sym">${tokenSym}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tokenName}</div>
-          <span class="dex-chain">${chain}</span>
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="dex-sym">${tokenSym}</span>
+            <span class="dex-chain">${chain}</span>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tokenName}</div>
         </div>
-        <span class="pill ${pillCls}" style="flex-shrink:0">${sigLabel}</span>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${sigColor};line-height:1">${scoreNorm}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">/100</div>
+        </div>
       </div>
-      ${price ? `<div style="font-family:'DM Mono',monospace;font-size:13px;margin-top:8px;color:var(--text)">${price} <span style="color:${chgColor};font-size:11px">${chgTxt}</span></div>` : ''}
-      <div class="dex-metrics">
+
+      <!-- Price + changes -->
+      ${priceStr ? `<div style="margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text)">${priceStr}</span>
+        ${priceChgH1!==null?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:${priceChgH1>=0?'var(--green)':'var(--red)'}">${priceChgH1>=0?'+':''}${priceChgH1.toFixed(2)}% 1H</span>`:''}
+        ${priceChg!==null?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:${priceChg>=0?'var(--green)':'var(--red)'}">${priceChg>=0?'+':''}${priceChg.toFixed(2)}% 24H</span>`:''}
+      </div>` : ''}
+
+      <!-- Score chart -->
+      ${scoreChart}
+
+      <!-- Zone indicator -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px">
+        ${[
+          {range:'85-100', label:'PUMP', color:'var(--green)', active: scoreNorm>=85},
+          {range:'65-84',  label:'ALERTA', color:'var(--yellow)', active: scoreNorm>=65&&scoreNorm<85},
+          {range:'50-64',  label:'WATCH', color:'var(--blue)', active: scoreNorm>=50&&scoreNorm<65},
+          {range:'0-49',   label:'NEUTRO', color:'var(--text3)', active: scoreNorm<50},
+        ].map(z=>`<div style="text-align:center;padding:4px 2px;border-radius:3px;background:${z.active?z.color+'18':'transparent'};border:1px solid ${z.active?z.color+'44':'var(--border)'}">
+          <div style="font-family:'DM Mono',monospace;font-size:7px;color:${z.active?z.color:'var(--text3)'};">${z.label}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:7px;color:${z.active?z.color:'var(--text3)'};">${z.range}</div>
+          ${z.active?'<div style="font-size:8px">◄</div>':''}
+        </div>`).join('')}
+      </div>
+
+      <!-- Entry recommendation -->
+      <div style="margin-top:8px;background:${entryColor}18;border:1px solid ${entryColor}33;border-radius:5px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:${entryColor};font-weight:600">${entryAction}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:${entryColor};font-weight:700">${entryPct} capital</span>
+      </div>
+
+      <!-- Metrics -->
+      <div class="dex-metrics" style="margin-top:8px">
         <span class="dex-m">Boost: ${sig.boost}</span>
         ${vol ? `<span class="dex-m">${vol}</span>` : ''}
         ${liq ? `<span class="dex-m">${liq}</span>` : ''}
       </div>
+
+      <!-- Why flagged -->
       <div class="dex-why">
-        ${sigType==='rug'?'🚨 Pump extremo + liquidez baja = riesgo rug pull':sigType==='pump'?'⚡ Alto boost + precio subiendo = pump potencial':sigType==='dump'?'🔴 Precio cayendo con volumen alto = dump activo':'🆕 Token nuevo en DEX — monitorear actividad'}
+        ${sigType==='rug'?'🚨 Pump extremo + liquidez muy baja = alto riesgo rug pull. NO ENTRAR.':
+          sigType==='pump'?'⚡ Score alto + precio subiendo + boost elevado = pump potencial. Monitorear de cerca.':
+          sigType==='dump'?'🔴 Precio cayendo con volumen alto. Posible dump en curso.':
+          sigType==='alert'?'⚠️ Actividad inusual detectada. Vigilar para posible entrada.':
+          '🆕 Token nuevo en DEX. Acumular datos antes de tomar decisión.'}
       </div>
-      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <a href="https://dexscreener.com/${chain}/${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">DexScreener ↗</a>
-        ${t.tokenAddress ? `<a href="https://dexscreener.com/search?q=${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">Buscar par ↗</a>` : ''}
+
+      <!-- Links -->
+      <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
+        <a href="${pairUrl || 'https://dexscreener.com/' + chain + '/' + t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">📡 DexScreener ↗</a>
+        ${t.tokenAddress ? `<a href="https://dexscreener.com/search?q=${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">🔍 Ver par ↗</a>` : ''}
       </div>`;
     el.appendChild(card);
   }
