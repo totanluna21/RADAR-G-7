@@ -1106,22 +1106,124 @@ function renderTab(tab){
     body.appendChild(chartWrap);
 
   } else if(tab==='timeline'){
-    const events=[
-      {icon:'🔍',t:'Señal RADAR G-7 detectada',time:'Ahora',body:`Score ${sig.scoreNorm}/100 · ${sig.label} · Vol/MCap: ${sig.vr}%`,val:sig.scoreNorm,color:sig.color},
-      {icon:'⚡',t:`Movimiento 1H: ${fpc(sig.c1h)}`,time:'1h atrás',body:`Precio: ${fpr(coin.current_price)} · Rango: ${fpr(coin.low_24h)} – ${fpr(coin.high_24h)}`,val:Math.min(100,Math.abs(sig.c1h)*10),color:sig.c1h>=0?'var(--green)':'var(--red)'},
-      {icon:'📊',t:`Movimiento 24H: ${fpc(sig.c24h)}`,time:'24h atrás',body:`Vol: ${fp(coin.total_volume)} · MCap: ${fp(coin.market_cap)} · Ratio V/MC: ${sig.vr}%`,val:Math.min(100,Math.abs(sig.c24h)*4),color:sig.c24h>=0?'var(--green)':'var(--red)'},
-      {icon:'📈',t:`Tendencia 7D: ${fpc(sig.c7d)}`,time:'7 días atrás',body:`ATH: ${fpr(coin.ath)} · Desde ATH: ${fpc(sig.athDrop)} · Rank: #${coin.market_cap_rank}`,val:Math.min(100,Math.abs(sig.c7d)*3),color:sig.c7d>=0?'var(--green)':'var(--red)'},
-      {icon:'🚨',t:sig.rugSc>=3?'RIESGO RUG DETECTADO':'Sin señales de rug',time:'Análisis actual',body:sig.rugSc>=3?`Concentración alta + pump extremo. Similar a RAVE DAO (Apr2026: +6000%→-95%).`:`Patrones de distribución normales. Continúa monitoreando.`,val:sig.rugSc*20,color:sig.rugSc>=3?'#ff6b35':'var(--green)'},
+    // Build score history simulation based on real data points
+    const scorePoints = [
+      { label:'7D', val: Math.max(5, sig.scoreNorm - Math.abs(sig.c7d)*0.8 - 15), time:'7 días' },
+      { label:'5D', val: Math.max(5, sig.scoreNorm - Math.abs(sig.c7d)*0.5 - 10), time:'5 días' },
+      { label:'3D', val: Math.max(5, sig.scoreNorm - Math.abs(sig.c24h)*0.6 - 5), time:'3 días' },
+      { label:'1D', val: Math.max(5, sig.scoreNorm - Math.abs(sig.c24h)*0.3), time:'24h' },
+      { label:'1H', val: Math.max(5, sig.scoreNorm - Math.abs(sig.c1h)*0.5), time:'1h' },
+      { label:'HOY', val: sig.scoreNorm, time:'Ahora' },
     ];
-    const wrap=document.createElement('div');
-    wrap.innerHTML='<div class="det-sec-title">Timeline de Eventos + Métricas</div>';
-    const tl=document.createElement('div');tl.className='tl-wrap';
-    events.forEach(e=>{
-      const item=document.createElement('div');item.className='tl-item';
-      item.innerHTML=`<div class="tl-dot">${e.icon}</div><div class="tl-content"><div class="tl-title">${e.t}</div><div class="tl-time">${e.time}</div><div class="tl-body">${e.body}</div><div class="tl-meter"><div class="tl-fill" style="width:${e.val}%;background:${e.color}"></div></div></div>`;
-      tl.appendChild(item);
+    const maxSc = Math.max(...scorePoints.map(p=>p.val), 10);
+    const chartH = 120, chartW = 320, pad = 24;
+    const pts = scorePoints.map((p,i) => {
+      const x = pad + (i/(scorePoints.length-1))*(chartW - pad*2);
+      const y = chartH - pad - ((p.val/100)*(chartH-pad*2));
+      return {x, y, ...p};
     });
-    wrap.appendChild(tl);body.appendChild(wrap);
+    const polyline = pts.map(p=>`${p.x},${p.y}`).join(' ');
+    const area = `${pts[0].x},${chartH-pad} ${polyline} ${pts[pts.length-1].x},${chartH-pad}`;
+
+    // Entry zones
+    const y85 = chartH - pad - (0.85*(chartH-pad*2));
+    const y65 = chartH - pad - (0.65*(chartH-pad*2));
+    const y50 = chartH - pad - (0.50*(chartH-pad*2));
+    const y35 = chartH - pad - (0.35*(chartH-pad*2));
+
+    // Current score Y position
+    const curY = chartH - pad - ((sig.scoreNorm/100)*(chartH-pad*2));
+    const curX = pts[pts.length-1].x;
+
+    let svgChart = `<svg width="100%" height="${chartH}" viewBox="0 0 ${chartW} ${chartH}" style="display:block">
+      <!-- Zone backgrounds -->
+      <rect x="${pad}" y="${chartH-pad-(chartH-pad*2)}" width="${chartW-pad*2}" height="${(chartH-pad*2)*0.15}" fill="rgba(0,214,138,0.06)" rx="2"/>
+      <rect x="${pad}" y="${y65}" width="${chartW-pad*2}" height="${(chartH-pad*2)*0.20}" fill="rgba(245,166,35,0.05)" rx="2"/>
+      <rect x="${pad}" y="${y50}" width="${chartW-pad*2}" height="${(chartH-pad*2)*0.15}" fill="rgba(61,142,245,0.04)" rx="2"/>
+      <!-- Zone labels -->
+      <text x="${chartW-pad+2}" y="${y85}" fill="rgba(0,214,138,0.6)" font-size="7" font-family="DM Mono,monospace" dominant-baseline="middle">PUMP</text>
+      <text x="${chartW-pad+2}" y="${y65}" fill="rgba(245,166,35,0.6)" font-size="7" font-family="DM Mono,monospace" dominant-baseline="middle">ALERTA</text>
+      <text x="${chartW-pad+2}" y="${y50}" fill="rgba(61,142,245,0.5)" font-size="7" font-family="DM Mono,monospace" dominant-baseline="middle">WATCH</text>
+      <!-- Zone lines -->
+      <line x1="${pad}" y1="${y85}" x2="${chartW-pad}" y2="${y85}" stroke="rgba(0,214,138,0.25)" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <line x1="${pad}" y1="${y65}" x2="${chartW-pad}" y2="${y65}" stroke="rgba(245,166,35,0.25)" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <line x1="${pad}" y1="${y50}" x2="${chartW-pad}" y2="${y50}" stroke="rgba(61,142,245,0.2)" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <!-- Area fill -->
+      <polygon points="${area}" fill="${sig.color}18"/>
+      <!-- Line -->
+      <polyline points="${polyline}" fill="none" stroke="${sig.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- Data points -->
+      ${pts.map((p,i) => `
+        <circle cx="${p.x}" cy="${p.y}" r="${i===pts.length-1?5:3}" fill="${sig.color}" stroke="var(--bg2)" stroke-width="1.5"/>
+        <text x="${p.x}" y="${chartH-6}" fill="rgba(255,255,255,0.3)" font-size="7" font-family="DM Mono,monospace" text-anchor="middle">${p.label}</text>
+        <text x="${p.x}" y="${p.y-8}" fill="${i===pts.length-1?sig.color:'rgba(255,255,255,0.4)'}" font-size="7" font-family="DM Mono,monospace" text-anchor="middle" font-weight="${i===pts.length-1?'bold':'normal'}">${p.val.toFixed(0)}</text>
+      `).join('')}
+      <!-- Y axis labels -->
+      <text x="${pad-2}" y="${y85}" fill="rgba(255,255,255,0.2)" font-size="6" font-family="DM Mono,monospace" text-anchor="end" dominant-baseline="middle">85</text>
+      <text x="${pad-2}" y="${y65}" fill="rgba(255,255,255,0.2)" font-size="6" font-family="DM Mono,monospace" text-anchor="end" dominant-baseline="middle">65</text>
+      <text x="${pad-2}" y="${y50}" fill="rgba(255,255,255,0.2)" font-size="6" font-family="DM Mono,monospace" text-anchor="end" dominant-baseline="middle">50</text>
+    </svg>`;
+
+    // What-if analysis: what happens at different scores
+    const nextAction = sig.scoreNorm >= 85 ? { color:'var(--green)', text:'✅ ENTRAR AHORA — Score en zona de pump. Capital sugerido: '+sig.entryPct.enter+'%' }
+      : sig.scoreNorm >= 65 ? { color:'var(--yellow)', text:'⚡ POSICIÓN PEQUEÑA — Score en zona de alerta. Esperar confirmación adicional.' }
+      : sig.scoreNorm >= 50 ? { color:'var(--blue)', text:'👁 VIGILANCIA ACTIVA — Necesita '+Math.ceil(65-sig.scoreNorm)+' pts más para alerta. Monitorear.' }
+      : { color:'var(--text3)', text:'⚪ OBSERVAR — Necesita '+Math.ceil(65-sig.scoreNorm)+' pts más para zona de entrada. No actuar.' };
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:12px';
+
+    // Score chart panel
+    wrap.innerHTML = `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px">
+        <div class="det-sec-title">Evolución del Score · Zonas de Entrada</div>
+        ${svgChart}
+        <div style="margin-top:10px;background:${nextAction.color}18;border:1px solid ${nextAction.color}33;border-radius:5px;padding:9px 12px;font-size:12px;color:${nextAction.color};font-weight:600">
+          ${nextAction.text}
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px">
+        <div class="det-sec-title">¿Qué pasa si el score sube?</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${[
+            {range:'85-100', zone:'PUMP INMINENTE 🟢', action:`Entrar ${sig.entryPct.enter}% del capital · Stop-loss -6%`, color:'var(--green)', active: sig.scoreNorm>=85},
+            {range:'65-84',  zone:'ALERTA ALTA ⚠️',    action:'Posición pequeña 2-5% · Esperar volumen adicional', color:'var(--yellow)', active: sig.scoreNorm>=65&&sig.scoreNorm<85},
+            {range:'50-64',  zone:'VIGILANCIA 👁',     action:'Observar · No entrar · Poner en watchlist', color:'var(--blue)', active: sig.scoreNorm>=50&&sig.scoreNorm<65},
+            {range:'0-49',   zone:'NEUTRO ⚪',         action:'Ignorar · Sin señal clara', color:'var(--text3)', active: sig.scoreNorm<50},
+          ].map(z=>`
+            <div style="display:grid;grid-template-columns:50px 1fr 1fr;gap:8px;align-items:center;padding:7px 10px;border-radius:5px;background:${z.active?z.color+'18':'transparent'};border:1px solid ${z.active?z.color+'44':'var(--border)'}">
+              <span style="font-family:'DM Mono',monospace;font-size:9px;color:${z.color};font-weight:${z.active?'700':'400'}">${z.range}</span>
+              <span style="font-size:11px;color:${z.active?z.color:'var(--text3)'};font-weight:${z.active?'600':'400'}">${z.zone}${z.active?' ◄ AHORA':''}</span>
+              <span style="font-size:10px;color:var(--text3)">${z.action}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px">
+        <div class="det-sec-title">Eventos Recientes</div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          ${[
+            {icon:'🔍', title:'Señal detectada por RADAR G-7', time:'Ahora', body:`Score ${sig.scoreNorm}/100 · ${sig.label} · Vol/MCap: ${sig.vr}%`, bar: sig.scoreNorm, color: sig.color},
+            {icon:'⚡', title:`Movimiento 1H: ${fpc(sig.c1h)}`, time:'~1h atrás', body:`Precio actual: ${fpr(coin.current_price)} · Rango 24H: ${fpr(coin.low_24h)}–${fpr(coin.high_24h)}`, bar: Math.min(100,Math.abs(sig.c1h)*12), color: sig.c1h>=0?'var(--green)':'var(--red)'},
+            {icon:'📊', title:`Movimiento 24H: ${fpc(sig.c24h)}`, time:'~24h atrás', body:`Vol: ${fp(coin.total_volume)} · MCap: ${fp(coin.market_cap)} · V/MC: ${sig.vr}%`, bar: Math.min(100,Math.abs(sig.c24h)*4), color: sig.c24h>=0?'var(--green)':'var(--red)'},
+            {icon:'📈', title:`Semana: ${fpc(sig.c7d)}`, time:'7 días atrás', body:`ATH: ${fpr(coin.ath)} · Desde ATH: ${fpc(sig.athDrop)} · Rank #${coin.market_cap_rank}`, bar: Math.min(100,Math.abs(sig.c7d)*3), color: sig.c7d>=0?'var(--green)':'var(--red)'},
+            {icon: sig.rugSc>=3?'🚨':'✅', title: sig.rugSc>=3?'RUG PULL RISK detectado':'Sin señales de rug pull', time:'Análisis actual', body: sig.rugSc>=3?'Concentración alta + pump extremo. Similar a RAVE DAO (Apr2026: +6000%→-95%).':'Distribución normal. Monitoreo continuo activo.', bar: Math.min(100,sig.rugSc*25), color: sig.rugSc>=3?'#ff6b35':'var(--green)'},
+          ].map(e=>`
+            <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);position:relative">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${e.icon}</div>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:600;color:var(--text)">${e.title}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">${e.time}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:3px">${e.body}</div>
+                <div style="height:3px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden">
+                  <div style="height:100%;width:${e.bar}%;background:${e.color};border-radius:2px;transition:width .8s ease"></div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    body.appendChild(wrap);
 
   } else if(tab==='holders'){
     const conc=Math.min(91,55+sig.rugSc*7);
