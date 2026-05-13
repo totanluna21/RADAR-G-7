@@ -308,6 +308,7 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 @keyframes gSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes scanRot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes ticker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
 
 /* ── WALLET CONNECT ── */
 .wallet-bar{position:fixed;bottom:0;left:220px;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:12px;z-index:300;height:46px;}
@@ -398,7 +399,7 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="tb-right">
     <div class="tb-pill"><span>⬡</span><span id="tbMon">—</span></div>
     <div class="tb-pill" style="border-color:rgba(232,48,58,0.25);color:var(--red)">🔔 <span id="tbAlt">0</span></div>
-    <div class="tb-pill live"><div class="live-dot"></div>LIVE</div>
+    <div class="tb-pill" id="tbFG" style="border-color:rgba(245,166,35,0.2);color:var(--yellow)" title="Fear & Greed Index">😱 <span id="tbFGVal">—</span></div><div class="tb-pill live"><div class="live-dot"></div>LIVE</div>
     <button class="tb-btn" onclick="refreshAll()">↻ UPDATE</button>
   </div>
 </div>
@@ -415,7 +416,7 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="nav-lbl">ANÁLISIS</div>
   <div class="nav-item" onclick="showPage('chat')" id="nav-chat"><span>🛰</span> IA Radar</div>
   <div class="nav-item" onclick="showPage('learning')" id="nav-learning"><span>📚</span> Learning</div>
-  <div class="sidebar-ver">RADAR G-7 v2.1 · CoinGecko + DexScreener</div>
+  <div class="sidebar-ver">RADAR G-7 v3.0 · 6 fuentes de datos</div>
 </div>
 
 <!-- MAIN -->
@@ -428,10 +429,44 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
     <div class="ph-right"><button class="btn primary" onclick="refreshAll()">↻ Actualizar</button></div>
   </div>
   <div class="stats-row">
-    <div class="stat-card"><div class="sc-lbl">⬡ TOKENS</div><div class="sc-val red" id="s1">—</div><div class="sc-sub">CoinGecko Top 50</div></div>
+    <div class="stat-card"><div class="sc-lbl">⬡ TOKENS</div><div class="sc-val red" id="s1">—</div><div class="sc-sub">CoinGecko Top 100</div></div>
     <div class="stat-card"><div class="sc-lbl">🔥 SCORE MÁX</div><div class="sc-val red" id="s2">—</div><div class="sc-sub" id="s2s">calculando...</div></div>
     <div class="stat-card"><div class="sc-lbl">🔔 ALERTAS 24H</div><div class="sc-val yellow" id="s3">—</div><div class="sc-sub" id="s3s">pump + dump + rug</div></div>
     <div class="stat-card"><div class="sc-lbl">📈 MERCADO</div><div class="sc-val green" id="s4">—</div><div class="sc-sub" id="s4s">tendencia</div></div>
+  </div>
+  <!-- MARKET INTELLIGENCE ROW -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex-shrink:0">
+    <div class="stat-card" style="padding:12px 14px">
+      <div class="sc-lbl">😱 FEAR & GREED</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+        <div class="sc-val" id="fgVal" style="font-size:28px">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px" id="fgLabel">cargando...</div>
+      </div>
+      <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;overflow:hidden"><div id="fgBar" style="height:100%;border-radius:2px;transition:width .8s ease;background:var(--text3);width:0%"></div></div>
+      <div class="sc-sub" id="fgSub">Índice de mercado</div>
+    </div>
+    <div class="stat-card" style="padding:12px 14px">
+      <div class="sc-lbl">💸 FUNDING RATE BTC</div>
+      <div class="sc-val" id="frVal" style="font-size:28px">—</div>
+      <div class="sc-sub" id="frSub">Binance Futures</div>
+    </div>
+    <div class="stat-card" style="padding:12px 14px">
+      <div class="sc-lbl">💥 LIQUIDACIONES 24H</div>
+      <div class="sc-val yellow" id="liqVal" style="font-size:28px">—</div>
+      <div class="sc-sub" id="liqSub">Long + Short</div>
+    </div>
+    <div class="stat-card" style="padding:12px 14px">
+      <div class="sc-lbl">📰 NOTICIAS CRYPTO</div>
+      <div class="sc-val blue" id="newsVal" style="font-size:28px">—</div>
+      <div class="sc-sub" id="newsSub">CryptoPanic</div>
+    </div>
+  </div>
+  <!-- NEWS TICKER -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex-shrink:0;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--red);letter-spacing:2px;flex-shrink:0">📰 NOTICIAS</span>
+      <div style="overflow:hidden;flex:1"><div id="newsTicker" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);white-space:nowrap;animation:ticker 30s linear infinite">Cargando noticias...</div></div>
+    </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 290px;gap:11px;flex:1;min-height:0;">
     <div class="panel">
@@ -439,9 +474,15 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
       <div class="tt-head"><span>#</span><span>TOKEN</span><span>SCORE</span><span>PRECIO</span><span>1H</span><span>24H</span><span>V/MC</span><span>SEÑAL</span><span>VER</span></div>
       <div style="overflow-y:auto;flex:1" id="ovTable"><div class="loading"><div class="ls"></div>Escaneando...</div></div>
     </div>
-    <div class="panel">
-      <div class="panel-hdr"><div class="panel-title">🔔 Alertas</div><span class="ptag r">stream</span></div>
-      <div style="overflow-y:auto;flex:1" id="ovAlerts"><div class="loading"><div class="ls"></div></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel" style="flex:1">
+        <div class="panel-hdr"><div class="panel-title">🔔 Alertas</div><span class="ptag r">stream</span></div>
+        <div style="overflow-y:auto;flex:1" id="ovAlerts"><div class="loading"><div class="ls"></div></div></div>
+      </div>
+      <div class="panel" style="flex-shrink:0">
+        <div class="panel-hdr"><div class="panel-title">🐳 Whale Alerts</div><span class="ptag b">live</span></div>
+        <div style="overflow-y:auto;max-height:160px" id="whaleList"><div class="loading"><div class="ls"></div></div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -735,11 +776,261 @@ async function fetchDexPairs(tokenAddr,chain){
 // ═══════════════
 // LOAD DATA
 // ═══════════════
+// ─── MARKET INTEL APIs ───
+async function fetchFearGreed(){
+  try{
+    const r=await fetch('https://api.alternative.me/fng/?limit=1');
+    const d=await r.json();
+    return d.data?.[0]||null;
+  }catch{return null;}
+}
+
+async function fetchFundingRate(){
+  try{
+    const r=await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
+    const d=await r.json();
+    return d?.[0]||null;
+  }catch{return null;}
+}
+
+async function fetchLiquidations(){
+  try{
+    // Coinglass open API for liquidations
+    const r=await fetch('https://open-api.coinglass.com/public/v2/liquidation_chart?ex=Binance&pair=BTC&interval=0&num=1');
+    const d=await r.json();
+    return d.data||null;
+  }catch{
+    // Fallback: estimate from Binance open interest
+    try{
+      const r2=await fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
+      const d2=await r2.json();
+      return {openInterest: d2.openInterest};
+    }catch{return null;}
+  }
+}
+
+async function fetchNews(){
+  try{
+    const r=await fetch('https://cryptopanic.com/api/v1/posts/?auth_token=public&filter=hot&public=true&kind=news&limit=20');
+    const d=await r.json();
+    return d.results||[];
+  }catch{
+    // Fallback news from RSS alternative
+    return [];
+  }
+}
+
+async function fetchWhaleAlerts(){
+  try{
+    // Use Whale Alert free tier via public API
+    const r=await fetch('https://api.whale-alert.io/v1/transactions?api_key=free&min_value=1000000&limit=10');
+    const d=await r.json();
+    return d.transactions||[];
+  }catch{
+    // Simulate whale activity from CoinGecko large moves
+    return [];
+  }
+}
+
+async function fetchBTCDominance(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/global');
+    const d=await r.json();
+    return d.data;
+  }catch{return null;}
+}
+
+// ─── RENDER MARKET INTEL ───
+function renderFearGreed(data){
+  if(!data) return;
+  const val=parseInt(data.value||0);
+  const label=data.value_classification||'';
+  const el=document.getElementById('fgVal');
+  const labelEl=document.getElementById('fgLabel');
+  const barEl=document.getElementById('fgBar');
+  const subEl=document.getElementById('fgSub');
+  if(el) el.textContent=val;
+  if(labelEl){
+    const color=val<=25?'var(--red)':val<=45?'var(--yellow)':val<=55?'var(--text2)':val<=75?'var(--green)':'var(--green)';
+    labelEl.textContent=label;
+    labelEl.style.color=color;
+    if(el) el.style.color=color;
+  }
+  if(barEl){
+    const color=val<=25?'#e8303a':val<=45?'#f5a623':val<=55?'#8899aa':val<=75?'#00d68a':'#00ff9d';
+    barEl.style.width=val+'%';
+    barEl.style.background=color;
+  }
+  const tbfg=document.getElementById('tbFGVal');if(tbfg)tbfg.textContent=val+(val<=25?' 😱':val<=45?' 😨':val<=55?' 😐':val<=75?' 😀':' 🤑');
+  if(subEl) subEl.textContent=val<=25?'Miedo Extremo — Posible oportunidad':val<=45?'Miedo — Mercado nervioso':val<=55?'Neutral':val<=75?'Codicia — Cuidado':'Codicia Extrema — Alto riesgo';
+}
+
+function renderFundingRate(data){
+  if(!data) return;
+  const rate=parseFloat(data.fundingRate||0)*100;
+  const el=document.getElementById('frVal');
+  const sub=document.getElementById('frSub');
+  if(el){
+    el.textContent=(rate>=0?'+':'')+rate.toFixed(4)+'%';
+    el.style.color=rate>0.05?'var(--red)':rate<-0.01?'var(--green)':'var(--text)';
+  }
+  if(sub){
+    if(rate>0.1) sub.textContent='🔴 Muy alto — Dump probable';
+    else if(rate>0.05) sub.textContent='⚠️ Alto — Precaución longs';
+    else if(rate<-0.05) sub.textContent='🟢 Negativo — Posible rebote';
+    else sub.textContent='Neutral · Binance BTC/USDT';
+  }
+}
+
+function renderLiquidations(data){
+  const el=document.getElementById('liqVal');
+  const sub=document.getElementById('liqSub');
+  if(!el) return;
+  if(data && data.openInterest){
+    const oi=parseFloat(data.openInterest)/1e9;
+    el.textContent='$'+oi.toFixed(1)+'B';
+    if(sub) sub.textContent='Open Interest BTC Binance';
+  } else {
+    el.textContent='—';
+    if(sub) sub.textContent='No disponible';
+  }
+}
+
+function renderNews(news){
+  const el=document.getElementById('newsVal');
+  const sub=document.getElementById('newsSub');
+  const ticker=document.getElementById('newsTicker');
+  if(el) el.textContent=news.length||'—';
+  if(sub) sub.textContent=`${news.filter(n=>n.votes?.negative>3).length} negativas · ${news.filter(n=>n.votes?.positive>5).length} positivas`;
+  if(ticker && news.length){
+    const items=news.slice(0,10).map(n=>{
+      const sentiment=n.votes?.negative>n.votes?.positive?'🔴':'🟢';
+      return `${sentiment} ${n.title}`;
+    }).join('   ·   ');
+    ticker.textContent=items;
+    // Reset animation
+    ticker.style.animation='none';
+    setTimeout(()=>ticker.style.animation='ticker 40s linear infinite',10);
+  } else if(ticker){
+    ticker.textContent='Sin noticias disponibles · Verifica conexión';
+  }
+}
+
+function renderWhaleAlerts(whales){
+  const el=document.getElementById('whaleList');
+  if(!el) return;
+  if(!whales||!whales.length){
+    // Show top movers as whale proxy
+    const bigMoves=allCoins
+      .filter(c=>Math.abs(c.price_change_percentage_24h||0)>8&&(c.total_volume||0)>500e6)
+      .sort((a,b)=>Math.abs(b.price_change_percentage_24h||0)-Math.abs(a.price_change_percentage_24h||0))
+      .slice(0,5);
+    if(!bigMoves.length){el.innerHTML='<div class="empty" style="padding:12px;font-size:10px">Sin movimientos ballena detectados</div>';return;}
+    el.innerHTML='';
+    bigMoves.forEach(c=>{
+      const chg=c.price_change_percentage_24h||0;
+      const item=document.createElement('div');
+      item.style.cssText='padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px';
+      item.innerHTML=`
+        <span style="font-size:16px">${chg>0?'🐳':'🔴'}</span>
+        <div style="flex:1">
+          <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700">${c.symbol?.toUpperCase()} <span style="font-size:10px;color:var(--text3);font-weight:400">${c.name}</span></div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">Vol: ${fp(c.total_volume)} · ${chg>0?'Acumulación posible':'Distribución posible'}</div>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:${chg>0?'var(--green)':'var(--red)'};font-weight:600">${fpc(chg)}</span>`;
+      el.appendChild(item);
+    });
+    return;
+  }
+  el.innerHTML='';
+  whales.slice(0,8).forEach(w=>{
+    const item=document.createElement('div');
+    item.style.cssText='padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px';
+    const amt=w.amount_usd>=1e9?`$${(w.amount_usd/1e9).toFixed(1)}B`:w.amount_usd>=1e6?`$${(w.amount_usd/1e6).toFixed(0)}M`:`$${w.amount_usd}`;
+    const isToEx=w.to?.owner_type==='exchange';
+    item.innerHTML=`
+      <span style="font-size:16px">${isToEx?'🔴':'🐳'}</span>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700">${w.symbol?.toUpperCase()||'?'} · ${amt}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">${isToEx?'→ Exchange (posible venta)':'← Fuera exchange (acumulación)'}</div>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">${new Date(w.timestamp*1000).toLocaleTimeString()}</span>`;
+    el.appendChild(item);
+  });
+}
+
+// ─── ENHANCED SIGNAL with market intel ───
+let marketIntel = {
+  fearGreed: null,
+  fundingRate: null,
+  news: [],
+};
+
+function enhancedSignal(sig, coin){
+  let boost = 0;
+  let warnings = [];
+
+  // Fear & Greed boosts signal confidence
+  if(marketIntel.fearGreed){
+    const fg=parseInt(marketIntel.fearGreed.value||50);
+    if(sig.type==='pump' && fg>75){ boost+=10; warnings.push('⚠️ Codicia extrema — entrada de riesgo');}
+    if(sig.type==='dump' && fg<25){ boost+=10; warnings.push('🟢 Miedo extremo — posible rebote');}
+    if(sig.type==='pump' && fg<25){ boost+=5; } // pump in fear = strong signal
+  }
+
+  // Funding rate adjusts pump/dump confidence
+  if(marketIntel.fundingRate){
+    const fr=parseFloat(marketIntel.fundingRate.fundingRate||0)*100;
+    if(fr>0.1 && sig.type==='pump'){ boost-=10; warnings.push('⚠️ Funding muy alto — dump probable'); }
+    if(fr<-0.05 && sig.type==='dump'){ boost-=5; warnings.push('🟢 Funding negativo — rebote posible'); }
+  }
+
+  return { ...sig, scoreNorm: Math.min(100, Math.max(0, sig.scoreNorm+boost)), warnings };
+}
+
 async function loadData(){
   try{
-    const coins=await fetchMarket();
-    allCoins=coins;
-    allAlerts=coins.map(c=>({coin:c,sig:calcSignal(c)})).filter(x=>x.sig.type!=='neutral'&&x.sig.type!=='watch').sort((a,b)=>b.sig.score-a.sig.score);
+    // Parallel fetch for speed
+    const [coins, fg, fr, liq, news, whales, global] = await Promise.allSettled([
+      fetchMarket(),
+      fetchFearGreed(),
+      fetchFundingRate(),
+      fetchLiquidations(),
+      fetchNews(),
+      fetchWhaleAlerts(),
+      fetchBTCDominance(),
+    ]);
+
+    if(coins.status==='fulfilled'){
+      allCoins=coins.value;
+    }
+
+    // Update market intel
+    if(fg.status==='fulfilled' && fg.value){
+      marketIntel.fearGreed=fg.value;
+      renderFearGreed(fg.value);
+    }
+    if(fr.status==='fulfilled' && fr.value){
+      marketIntel.fundingRate=fr.value;
+      renderFundingRate(fr.value);
+    }
+    if(liq.status==='fulfilled'){
+      renderLiquidations(liq.value);
+    }
+    if(news.status==='fulfilled'){
+      marketIntel.news=news.value||[];
+      renderNews(news.value||[]);
+    }
+    if(whales.status==='fulfilled'){
+      renderWhaleAlerts(whales.value||[]);
+    }
+    if(global.status==='fulfilled' && global.value){
+      const btcD=(global.value.market_cap_percentage?.btc||0).toFixed(1);
+      const existing=document.getElementById('tbMon');
+      if(existing) existing.title=`BTC Dominance: ${btcD}%`;
+    }
+
+    allAlerts=allCoins.map(c=>({coin:c,sig:calcSignal(c)})).filter(x=>x.sig.type!=='neutral'&&x.sig.type!=='watch').sort((a,b)=>b.sig.score-a.sig.score);
     updateStats();
     renderOvTable();
     renderOvAlerts();
@@ -748,7 +1039,7 @@ async function loadData(){
     renderDiscover();
     renderCtxList();
     renderLearning();
-  }catch(e){console.error(e);}
+  }catch(e){console.error('loadData error:',e);}
 }
 
 function updateStats(){
@@ -1225,6 +1516,42 @@ function renderTab(tab){
     </div>`;
     body.appendChild(met);
 
+    // MARKET INTEL MINI PANEL
+    if(marketIntel.fearGreed || marketIntel.fundingRate){
+      const intelDiv=document.createElement('div');
+      intelDiv.innerHTML='<div class="det-sec-title">Contexto de Mercado</div>';
+      const intelGrid=document.createElement('div');
+      intelGrid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px';
+
+      if(marketIntel.fearGreed){
+        const fg=parseInt(marketIntel.fearGreed.value||50);
+        const fgColor=fg<=25?'var(--red)':fg<=45?'var(--yellow)':fg<=75?'var(--text)':'var(--green)';
+        const card=document.createElement('div');
+        card.className='met-card';
+        card.innerHTML=`<div class="met-lbl">😱 FEAR & GREED</div><div class="met-val" style="color:${fgColor}">${fg}/100</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${marketIntel.fearGreed.value_classification}</div>`;
+        intelGrid.appendChild(card);
+      }
+      if(marketIntel.fundingRate){
+        const fr=(parseFloat(marketIntel.fundingRate.fundingRate||0)*100);
+        const frColor=fr>0.1?'var(--red)':fr<-0.05?'var(--green)':'var(--text)';
+        const card=document.createElement('div');
+        card.className='met-card';
+        card.innerHTML=`<div class="met-lbl">💸 FUNDING BTC</div><div class="met-val" style="color:${frColor}">${fr>=0?'+':''}${fr.toFixed(4)}%</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${fr>0.1?'⚠️ Longs en peligro':fr<-0.05?'🟢 Shorts liquidados':'Neutral'}</div>`;
+        intelGrid.appendChild(card);
+      }
+      // Combined signal
+      const combined=document.createElement('div');
+      combined.className='met-card';
+      const fg2=marketIntel.fearGreed?parseInt(marketIntel.fearGreed.value):50;
+      const fr2=marketIntel.fundingRate?parseFloat(marketIntel.fundingRate.fundingRate)*100:0;
+      const combined_signal = fr2>0.1&&fg2>70?'🔴 Condiciones bajistas':fr2<-0.05&&fg2<30?'🟢 Condiciones alcistas':'⚪ Condiciones mixtas';
+      combined.innerHTML=`<div class="met-lbl">⚡ CONDICIÓN</div><div style="font-size:12px;font-weight:700;margin-top:4px;color:var(--text)">${combined_signal}</div>`;
+      intelGrid.appendChild(combined);
+
+      intelDiv.appendChild(intelGrid);
+      body.appendChild(intelDiv);
+    }
+
     // STRATEGY
     const price=coin.current_price||0;
     const target=sig.dir==='up'?price*1.15:price*0.85;
@@ -1448,7 +1775,9 @@ function renderTab(tab){
 // AI
 // ═══════════════
 async function getAI(coin,sig){
-  const ctx=`${coin.name}($${coin.symbol?.toUpperCase()}) Rank#${coin.market_cap_rank}: Precio=${fpr(coin.current_price)}, 1H=${fpc(sig.c1h)}, 24H=${fpc(sig.c24h)}, 7D=${fpc(sig.c7d)}, MCap=${fp(coin.market_cap)}, Vol=${fp(coin.total_volume)}, V/MC=${sig.vr}%, ATH=${fpr(coin.ath)}, desdéATH=${fpc(sig.athDrop)}, Score=${sig.scoreNorm}/100, Señal=${sig.label}, Entrada=${sig.entryPct.enter}%, RugScore=${sig.rugSc}`;
+  const fg=marketIntel.fearGreed?`Fear&Greed=${marketIntel.fearGreed.value}(${marketIntel.fearGreed.value_classification})`:'';
+  const fr=marketIntel.fundingRate?`FundingBTC=${(parseFloat(marketIntel.fundingRate.fundingRate)*100).toFixed(4)}%`:'';
+  const ctx=`${coin.name}($${coin.symbol?.toUpperCase()}) Rank#${coin.market_cap_rank}: Precio=${fpr(coin.current_price)}, 1H=${fpc(sig.c1h)}, 24H=${fpc(sig.c24h)}, 7D=${fpc(sig.c7d)}, MCap=${fp(coin.market_cap)}, Vol=${fp(coin.total_volume)}, V/MC=${sig.vr}%, ATH=${fpr(coin.ath)}, desdéATH=${fpc(sig.athDrop)}, Score=${sig.scoreNorm}/100, Señal=${sig.label}, Entrada=${sig.entryPct.enter}%, RugScore=${sig.rugSc} | ${fg} | ${fr}`;
   const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,
       system:'Eres RADAR G-7, analista crypto de élite. Detectas pump, dump y rug pulls ANTES de que ocurran. Responde en español directo y contundente. Menciona siempre el porcentaje de entrada sugerido.',
@@ -1716,32 +2045,39 @@ function disconnectWallet() {
 }
 
 function updateWalletUI() {
-  const dot = document.getElementById('wltDot');
-  const label = document.getElementById('wltLabel');
-  const addr = document.getElementById('wltAddr');
-  const btn = document.getElementById('wltBtn');
-  const disc = document.getElementById('wltDisconnect');
-  const quickBuy = document.getElementById('quickBuyBtn');
+  const disconnected = document.getElementById('wltDisconnectedState');
+  const connected    = document.getElementById('wltConnectedState');
+  const dot          = document.getElementById('wltDot');
+  const addr         = document.getElementById('wltAddr');
+  const provName     = document.getElementById('wltProviderName');
+  const icon         = document.getElementById('wltWalletIcon');
+  const execBtn      = document.getElementById('tradeExecBtn');
 
   if (walletState.connected) {
-    dot.classList.add('connected');
-    label.textContent = walletState.provider === 'phantom' ? 'Phantom' : walletState.provider === 'solflare' ? 'Solflare' : 'MetaMask';
-    label.style.color = 'var(--green)';
-    addr.textContent = walletState.shortAddr;
-    btn.style.display = 'none';
-    disc.style.display = 'block';
-    quickBuy.disabled = false;
-    // Update trade button
-    document.getElementById('tradeExecBtn').disabled = false;
+    // Show connected panel, hide disconnected
+    if (disconnected) disconnected.style.display = 'none';
+    if (connected)    connected.style.display    = 'flex';
+
+    // Provider name + icon
+    const providerMap = {
+      phantom:  { name: 'Phantom',  emoji: '👻' },
+      solflare: { name: 'Solflare', emoji: '☀️' },
+      metamask: { name: 'MetaMask', emoji: '🦊' },
+    };
+    const prov = providerMap[walletState.provider] || { name: 'Wallet', emoji: '🔑' };
+    if (provName) provName.textContent = prov.name;
+    if (icon)     icon.textContent     = prov.emoji;
+
+    // Address
+    if (addr) addr.textContent = walletState.shortAddr || '';
+    if (dot)  { dot.classList.add('connected'); dot.style.background = 'var(--green)'; }
+    if (execBtn) execBtn.disabled = false;
   } else {
-    dot.classList.remove('connected');
-    label.textContent = 'Sin wallet';
-    label.style.color = 'var(--text3)';
-    addr.textContent = '';
-    btn.style.display = 'block';
-    disc.style.display = 'none';
-    quickBuy.disabled = true;
-    document.getElementById('tradeExecBtn').disabled = true;
+    // Show disconnected panel, hide connected
+    if (disconnected) disconnected.style.display = 'flex';
+    if (connected)    connected.style.display    = 'none';
+    if (dot)  { dot.classList.remove('connected'); dot.style.background = ''; }
+    if (execBtn) execBtn.disabled = true;
   }
   updateTradeBtn();
 }
@@ -1916,17 +2252,28 @@ if (typeof window.ethereum !== 'undefined') {
 
 <!-- WALLET BAR -->
 <div class="wallet-bar" id="walletBar">
-  <div class="wlt-status">
+  <div id="wltDisconnectedState" style="display:flex;align-items:center;gap:12px;width:100%">
     <div class="wlt-dot" id="wltDot"></div>
-    <span id="wltLabel" style="color:var(--text3)">Sin wallet</span>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">Sin wallet conectada</span>
+    <button class="wlt-btn connect" id="wltBtn" onclick="connectWallet()">🔗 Conectar Wallet</button>
+    <div class="wlt-sep"></div>
+    <span class="wlt-info">Soporta: MetaMask · Phantom · Solflare</span>
   </div>
-  <span class="wlt-addr" id="wltAddr"></span>
-  <button class="wlt-btn connect" id="wltBtn" onclick="connectWallet()">Conectar Wallet</button>
-  <div class="wlt-sep"></div>
-  <span class="wlt-info">🔒 MetaMask · Phantom · Solflare</span>
-  <div style="margin-left:auto;display:flex;gap:6px">
-    <button class="wlt-btn" onclick="openTrade(null,'buy')" id="quickBuyBtn" disabled>⚡ Compra rápida</button>
-    <button class="wlt-btn" onclick="disconnectWallet()" id="wltDisconnect" style="display:none">Desconectar</button>
+  <div id="wltConnectedState" style="display:none;align-items:center;gap:10px;width:100%">
+    <div style="display:flex;align-items:center;gap:7px;background:rgba(0,214,138,0.08);border:1px solid rgba(0,214,138,0.25);border-radius:5px;padding:4px 12px;">
+      <div class="wlt-dot connected" style="background:var(--green)"></div>
+      <span id="wltWalletIcon" style="font-size:15px">🦊</span>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--green)" id="wltProviderName">MetaMask</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)" id="wltAddr">0x0000...0000</div>
+      </div>
+    </div>
+    <div class="wlt-sep"></div>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">🔒 Sin custodia · Tu llave, tu crypto</span>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <button class="wlt-btn" onclick="openTrade(null,'buy')" id="quickBuyBtn" style="background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.3);color:var(--green)">⚡ Operar</button>
+      <button class="wlt-btn" onclick="disconnectWallet()" id="wltDisconnect" style="color:var(--red)">✕ Desconectar</button>
+    </div>
   </div>
 </div>
 
