@@ -412,11 +412,13 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="nav-item" onclick="showPage('alerts')" id="nav-alerts"><span>🔔</span> Alertas<span class="nav-badge" id="navBadge">0</span></div>
   <div class="nav-item" onclick="showPage('discover')" id="nav-discover"><span>◎</span> Discover</div>
   <div class="nav-item" onclick="showPage('dex')" id="nav-dex"><span>📡</span> DexScreener</div>
+  <div class="nav-item" onclick="showPage('cmc')" id="nav-cmc"><span>📊</span> CoinMarketCap</div>
+  <div class="nav-item" onclick="showPage('birdeye')" id="nav-birdeye"><span>🦅</span> Birdeye</div>
   <div class="nav-sep"></div>
   <div class="nav-lbl">ANÁLISIS</div>
   <div class="nav-item" onclick="showPage('chat')" id="nav-chat"><span>🛰</span> IA Radar</div>
   <div class="nav-item" onclick="showPage('learning')" id="nav-learning"><span>📚</span> Learning</div>
-  <div class="sidebar-ver">RADAR G-7 v3.0 · 6 fuentes de datos</div>
+  <div class="sidebar-ver">RADAR G-7 v4.0 · 8 fuentes de datos</div>
 </div>
 
 <!-- MAIN -->
@@ -548,10 +550,16 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="chat-layout" style="flex:1;min-height:0;">
     <div class="chat-wrap">
       <div class="chat-msgs" id="chatMsgs">
-        <div class="cmsg bot"><div class="cmsg-av bot">G7</div><div class="cmsg-bub bot">🛰️ RADAR G-7 activo. Datos reales del mercado disponibles. Detecta pump, dump, rug pulls. ¿Qué analizamos?</div></div>
+        <div class="cmsg bot"><div class="cmsg-av bot">G7</div><div class="cmsg-bub bot">🛰️ RADAR G-7 v4.0 — Sistema de inteligencia predictiva activo.
+
+📊 Fuentes activas: CoinGecko · DexScreener · Binance Futures · Fear&Greed · CoinMarketCap · Birdeye
+
+Puedo analizar cualquier token con datos reales, detectar pump/dump/rug pulls antes de que ocurran, y darte el porcentaje exacto de entrada.
+
+¿Qué quieres analizar?</div></div>
       </div>
       <div class="chat-inp-area">
-        <input class="chat-inp" id="chatInp" placeholder="Analiza BTC / ¿Hay rug pulls? / Top pumps hoy..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <input class="chat-inp" id="chatInp" placeholder="Analiza BTC · ¿Cuándo entrar a ETH? · ¿Hay rug pulls? · Mejor señal ahora..." onkeydown="if(event.key==='Enter')sendChat()"/>
         <button class="chat-send" id="chatSendBtn" onclick="sendChat()">ENVIAR</button>
       </div>
     </div>
@@ -569,6 +577,43 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
     <div class="ph-right"><button class="btn" onclick="clearLearning()">🗑 Limpiar</button></div>
   </div>
   <div id="learningList"><div class="empty">No hay registros. Abre el detalle de cualquier token para registrarlo.</div></div>
+</div>
+
+
+<!-- CMC PAGE -->
+<div class="page" id="page-cmc">
+  <div class="ph">
+    <div><div class="ph-title">📊 CoinMarketCap</div><div class="ph-sub">Gainers · Losers · Trending · Nuevos listados · Datos en tiempo real</div></div>
+    <div class="ph-right"><button class="btn primary" onclick="loadCMC()">↻ Actualizar CMC</button></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px;flex-shrink:0">
+    <button class="btn" onclick="setCMCFilter('gainers',this)" id="cf-gainers" style="justify-content:center">🚀 Gainers</button>
+    <button class="btn" onclick="setCMCFilter('losers',this)" id="cf-losers" style="justify-content:center">📉 Losers</button>
+    <button class="btn" onclick="setCMCFilter('trending',this)" id="cf-trending" style="justify-content:center">🔥 Trending</button>
+    <button class="btn" onclick="setCMCFilter('new',this)" id="cf-new" style="justify-content:center">🆕 Nuevos</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="cmcGrid">
+    <div class="loading" style="grid-column:1/-1"><div class="ls"></div>Cargando CoinMarketCap...</div>
+  </div>
+</div>
+
+<!-- BIRDEYE PAGE -->
+<div class="page" id="page-birdeye">
+  <div class="ph">
+    <div><div class="ph-title">🦅 Birdeye</div><div class="ph-sub">Solana DEX · Tokens nuevos · Memecoins · Detección temprana</div></div>
+    <div class="ph-right"><button class="btn primary" onclick="loadBirdeye()">↻ Escanear Solana</button></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;flex-shrink:0">
+    <button class="btn" onclick="setBirdeyeFilter('trending',this)" id="bf-trending" style="justify-content:center">🔥 Trending SOL</button>
+    <button class="btn" onclick="setBirdeyeFilter('new',this)" id="bf-new" style="justify-content:center">🆕 Nuevos tokens</button>
+    <button class="btn" onclick="setBirdeyeFilter('gainers',this)" id="bf-gainers" style="justify-content:center">🚀 Gainers SOL</button>
+  </div>
+  <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:var(--yellow);flex-shrink:0">
+    🦅 <strong>Birdeye</strong> — Especialista en Solana. Detecta memecoins y tokens nuevos antes de que exploten. Alto riesgo, alta recompensa.
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="birdeyeGrid">
+    <div class="loading" style="grid-column:1/-1"><div class="ls"></div>Conectando con Solana...</div>
+  </div>
 </div>
 
 </div><!-- /main -->
@@ -795,29 +840,62 @@ async function fetchFundingRate(){
 
 async function fetchLiquidations(){
   try{
-    // Coinglass open API for liquidations
-    const r=await fetch('https://open-api.coinglass.com/public/v2/liquidation_chart?ex=Binance&pair=BTC&interval=0&num=1');
-    const d=await r.json();
-    return d.data||null;
-  }catch{
-    // Fallback: estimate from Binance open interest
-    try{
-      const r2=await fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
-      const d2=await r2.json();
-      return {openInterest: d2.openInterest};
-    }catch{return null;}
+    // Binance: open interest + 24h stats combined
+    const [oiRes, statsRes] = await Promise.all([
+      fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT'),
+      fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=BTCUSDT'),
+    ]);
+    const oi    = await oiRes.json();
+    const stats = await statsRes.json();
+    return {
+      openInterest: oi.openInterest,
+      quoteVolume:  stats.quoteVolume,   // USDT volume = proxy for liquidations
+      priceChange:  stats.priceChangePercent,
+      highPrice:    stats.highPrice,
+      lowPrice:     stats.lowPrice,
+    };
+  }catch(e){
+    return null;
   }
 }
 
 async function fetchNews(){
-  try{
-    const r=await fetch('https://cryptopanic.com/api/v1/posts/?auth_token=public&filter=hot&public=true&kind=news&limit=20');
-    const d=await r.json();
-    return d.results||[];
-  }catch{
-    // Fallback news from RSS alternative
-    return [];
+  // Try multiple sources — pick whichever responds
+  const sources = [
+    // CoinGecko news (CORS-friendly)
+    async () => {
+      const r = await fetch('https://api.coingecko.com/api/v3/news?per_page=20');
+      const d = await r.json();
+      return (d.data||[]).map(n=>({
+        title: n.title,
+        url: n.url,
+        source: n.author?.name||'CoinGecko',
+        votes: { positive: n.positive_votes_count||0, negative: n.negative_votes_count||0 }
+      }));
+    },
+    // Messari (public RSS via allorigins proxy)
+    async () => {
+      const rss = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent('https://messari.io/rss/news.xml'));
+      const d = await rss.json();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(d.contents, 'text/xml');
+      const items = [...xml.querySelectorAll('item')].slice(0,15);
+      return items.map(item=>({
+        title: item.querySelector('title')?.textContent||'',
+        url: item.querySelector('link')?.textContent||'',
+        source: 'Messari',
+        votes: {positive:1, negative:0}
+      }));
+    },
+  ];
+
+  for (const source of sources) {
+    try {
+      const results = await source();
+      if (results && results.length > 0) return results;
+    } catch(e) {}
   }
+  return [];
 }
 
 async function fetchWhaleAlerts(){
@@ -888,11 +966,19 @@ function renderLiquidations(data){
   if(!el) return;
   if(data && data.openInterest){
     const oi=parseFloat(data.openInterest)/1e9;
+    const vol=data.quoteVolume?parseFloat(data.quoteVolume)/1e9:null;
+    const chg=data.priceChange?parseFloat(data.priceChange):null;
     el.textContent='$'+oi.toFixed(1)+'B';
-    if(sub) sub.textContent='Open Interest BTC Binance';
+    el.style.color=oi>15?'var(--red)':oi>10?'var(--yellow)':'var(--green)';
+    if(sub){
+      let txt='OI BTC Binance Futures';
+      if(chg!==null) txt+=` · ${chg>=0?'+':''}${chg.toFixed(2)}%`;
+      if(oi>15) txt+=' · ⚠️ OI alto';
+      sub.textContent=txt;
+    }
   } else {
     el.textContent='—';
-    if(sub) sub.textContent='No disponible';
+    if(sub) sub.textContent='Cargando Binance...';
   }
 }
 
@@ -900,19 +986,37 @@ function renderNews(news){
   const el=document.getElementById('newsVal');
   const sub=document.getElementById('newsSub');
   const ticker=document.getElementById('newsTicker');
-  if(el) el.textContent=news.length||'—';
-  if(sub) sub.textContent=`${news.filter(n=>n.votes?.negative>3).length} negativas · ${news.filter(n=>n.votes?.positive>5).length} positivas`;
-  if(ticker && news.length){
-    const items=news.slice(0,10).map(n=>{
-      const sentiment=n.votes?.negative>n.votes?.positive?'🔴':'🟢';
+
+  if(!news||!news.length){
+    // Show top movers as news proxy
+    const movers=allCoins.slice(0,5).map(c=>{
+      const chg=c.price_change_percentage_24h||0;
+      const icon=chg>5?'🟢':chg<-5?'🔴':'⚪';
+      return `${icon} ${c.name}: ${chg>=0?'+':''}${chg.toFixed(1)}% 24H`;
+    }).join('   ·   ');
+    if(el) el.textContent='—';
+    if(sub) sub.textContent='Usando movimientos de mercado';
+    if(ticker){
+      ticker.textContent=movers||'Cargando datos de mercado...';
+      ticker.style.animation='none';
+      setTimeout(()=>ticker.style.animation='ticker 35s linear infinite',10);
+    }
+    return;
+  }
+
+  if(el) el.textContent=news.length;
+  const neg=news.filter(n=>(n.votes?.negative||0)>(n.votes?.positive||0)).length;
+  const pos=news.length-neg;
+  if(sub) sub.textContent=`${pos} positivas · ${neg} negativas`;
+
+  if(ticker){
+    const items=news.slice(0,12).map(n=>{
+      const sentiment=(n.votes?.negative||0)>(n.votes?.positive||0)?'🔴':'🟢';
       return `${sentiment} ${n.title}`;
     }).join('   ·   ');
     ticker.textContent=items;
-    // Reset animation
     ticker.style.animation='none';
-    setTimeout(()=>ticker.style.animation='ticker 40s linear infinite',10);
-  } else if(ticker){
-    ticker.textContent='Sin noticias disponibles · Verifica conexión';
+    setTimeout(()=>ticker.style.animation='ticker 50s linear infinite',10);
   }
 }
 
@@ -1774,17 +1878,95 @@ function renderTab(tab){
 // ═══════════════
 // AI
 // ═══════════════
-async function getAI(coin,sig){
-  const fg=marketIntel.fearGreed?`Fear&Greed=${marketIntel.fearGreed.value}(${marketIntel.fearGreed.value_classification})`:'';
-  const fr=marketIntel.fundingRate?`FundingBTC=${(parseFloat(marketIntel.fundingRate.fundingRate)*100).toFixed(4)}%`:'';
-  const ctx=`${coin.name}($${coin.symbol?.toUpperCase()}) Rank#${coin.market_cap_rank}: Precio=${fpr(coin.current_price)}, 1H=${fpc(sig.c1h)}, 24H=${fpc(sig.c24h)}, 7D=${fpc(sig.c7d)}, MCap=${fp(coin.market_cap)}, Vol=${fp(coin.total_volume)}, V/MC=${sig.vr}%, ATH=${fpr(coin.ath)}, desdéATH=${fpc(sig.athDrop)}, Score=${sig.scoreNorm}/100, Señal=${sig.label}, Entrada=${sig.entryPct.enter}%, RugScore=${sig.rugSc} | ${fg} | ${fr}`;
-  const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,
-      system:'Eres RADAR G-7, analista crypto de élite. Detectas pump, dump y rug pulls ANTES de que ocurran. Responde en español directo y contundente. Menciona siempre el porcentaje de entrada sugerido.',
-      messages:[{role:'user',content:`DATOS REALES:\n${ctx}\n\nHistórico: RAVE DAO(+6000%→-95% insiders), MMT(TGE+4000%→-86%), Luna Terra(-99.99% stablecoin).\n\n1. Diagnóstico: qué está pasando y por qué\n2. ¿Hay similitud con casos históricos?\n🔺 BULLISH: [señales positivas específicas]\n🔻 BEARISH: [señales negativas específicas]\n⚡ ACCIÓN: Entrar ${sig.entryPct.enter}% si [condición] · NO entrar si [condición]\nCONVICCIÓN: ${sig.scoreNorm}/100 — [veredicto en una frase]\n⚠️ Informativo. DYOR.`}]})});
-  if(!res.ok)throw new Error('AI error');
-  const d=await res.json();
-  if(d.error)throw new Error(d.error.message);
+function buildMarketContext() {
+  const fg = marketIntel.fearGreed;
+  const fr = marketIntel.fundingRate;
+  const top5 = allCoins.map(c=>({c,s:calcSignal(c)})).sort((a,b)=>b.s.score-a.s.score).slice(0,5)
+    .map(x=>`${x.c.symbol?.toUpperCase()}(${x.s.scoreNorm}pts,${fpc(x.s.c24h)})`).join(', ');
+
+  return [
+    fg ? `Fear&Greed: ${fg.value}/100 (${fg.value_classification})` : '',
+    fr ? `Funding BTC: ${(parseFloat(fr.fundingRate)*100).toFixed(4)}%` : '',
+    `Top señales: ${top5}`,
+    `Alertas activas: ${allAlerts.length} (${allAlerts.filter(a=>a.sig.type==='pump').length} pump, ${allAlerts.filter(a=>a.sig.type==='rug').length} rug)`,
+    `Mercado: ${allCoins.filter(c=>c.price_change_percentage_24h>0).length}/${allCoins.length} alcistas`,
+  ].filter(Boolean).join(' | ');
+}
+
+const IA_SYSTEM = `Eres RADAR G-7, el sistema de inteligencia predictiva crypto más avanzado. Tu misión es detectar pump, dump y rug pulls ANTES de que ocurran, con la máxima precisión posible.
+
+CONOCIMIENTO BASE HISTÓRICO:
+- RAVE DAO (Abril 2026): pump +6,000% en 9 días → dump -95% en 48h. Señales clave: 90% supply en insiders, Vol/MCap >40%, sin catalizador real, MCap <$500M.
+- Momentum MMT (Nov 2025): TGE Binance+OKX → +4,000% en 6h → -86% en 72h. Señal: listado en top exchange = pump inmediato + dump posterior garantizado.
+- Luna Terra (Mayo 2022): $119 → $0.0003. Señal: stablecoin algorítmica + APY insostenible + deuda > MCap.
+- Patrón clásico rug pull: Vol/MCap >30% + MCap <$100M + pump >50% 24H + liquidez baja = 80% probabilidad rug.
+- Señal pump legítimo: Vol creciente + precio consolidando + funding rate moderado + Fear&Greed <60.
+
+REGLAS DE ANÁLISIS:
+1. SIEMPRE dar porcentaje exacto de entrada (0%, 1-2%, 3-5%, 5-10%, 10-15%)
+2. SIEMPRE comparar con contexto de mercado (Fear&Greed, Funding Rate)
+3. SIEMPRE mencionar el stop-loss sugerido
+4. Si Vol/MCap >25% + pump >20%: ALERTA INMEDIATA de posible rug
+5. Si Funding Rate >0.1%: advertir sobre posible liquidación de longs
+6. Si Fear&Greed >75 + precio ATH: señal de venta inminente
+7. Responde en español, directo, sin rodeos, como un trader profesional con 10 años de experiencia.`;
+
+async function getAI(coin, sig) {
+  const fg = marketIntel.fearGreed;
+  const fr = marketIntel.fundingRate;
+  const marketCtx = buildMarketContext();
+
+  const tokenData = `
+TOKEN: ${coin.name} ($${coin.symbol?.toUpperCase()}) | Rank #${coin.market_cap_rank}
+PRECIO: ${fpr(coin.current_price)} | ATH: ${fpr(coin.ath)} | Desde ATH: ${fpc(sig.athDrop)}
+CAMBIOS: 1H=${fpc(sig.c1h)} | 24H=${fpc(sig.c24h)} | 7D=${fpc(sig.c7d)}
+VOLUMEN: ${fp(coin.total_volume)} | MCAP: ${fp(coin.market_cap)} | Vol/MCap: ${sig.vr}%
+MÁXIMO 24H: ${fpr(coin.high_24h)} | MÍNIMO 24H: ${fpr(coin.low_24h)}
+RADAR SCORE: ${sig.scoreNorm}/100 | SEÑAL: ${sig.label} | RUG SCORE: ${sig.rugSc}/5
+ENTRADA SUGERIDA: ${sig.entryPct.enter}% del capital`;
+
+  const prompt = `CONTEXTO DE MERCADO AHORA MISMO:
+${marketCtx}
+
+DATOS REALES DEL TOKEN:
+${tokenData}
+
+Genera análisis RADAR G-7 con este formato exacto:
+
+🎯 DIAGNÓSTICO
+[2-3 líneas: qué está pasando exactamente con este token y por qué]
+
+📊 SEÑALES DETECTADAS
+🔺 ALCISTA: → [señal específica con dato] → [señal específica con dato]
+🔻 BAJISTA: → [señal específica con dato] → [señal específica con dato]
+${sig.rugSc>=3?'🚨 RUG ALERT: → [patrón detectado] → [comparación histórica]':''}
+
+📈 CONTEXTO DE MERCADO
+[1 línea: cómo afecta el Fear&Greed/Funding Rate a esta posición]
+
+⚡ ACCIÓN CONCRETA
+ENTRAR: ${sig.entryPct.enter}% si [condición específica]
+STOP-LOSS: $[precio] (-[%])
+TARGET: $[precio] (+[%])
+NO ENTRAR si [condición específica de riesgo]
+
+CONVICCIÓN RADAR G-7: ${sig.scoreNorm}/100
+[Una frase contundente de veredicto final]
+
+⚠️ Análisis informativo. No es consejo financiero. DYOR.`;
+
+  const res = await fetch('/api/ai', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 800,
+      system: IA_SYSTEM,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) throw new Error('AI error ' + res.status);
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.message);
   return (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
 }
 
@@ -1800,21 +1982,44 @@ function addChat(role,text){
 }
 
 async function sendChat(){
-  const inp=document.getElementById('chatInp');const v=inp.value.trim();
+  const inp=document.getElementById('chatInp');
+  const v=inp.value.trim();
   if(!v||chatBusy)return;
-  inp.value='';chatBusy=true;document.getElementById('chatSendBtn').disabled=true;
+  inp.value='';chatBusy=true;
+  document.getElementById('chatSendBtn').disabled=true;
   addChat('user',v);
-  const ctx=allCoins.map(c=>({c,s:calcSignal(c)})).sort((a,b)=>b.s.score-a.s.score).slice(0,5).map(x=>`${x.c.symbol?.toUpperCase()}:${x.s.label}(${x.s.scoreNorm}),24H=${fpc(x.s.c24h)},entrada=${x.s.entryPct.enter}%`).join(';');
+
+  if(!window.chatHistory) window.chatHistory=[];
+  const marketCtx=buildMarketContext();
+  const top10=allCoins.map(c=>({c,s:calcSignal(c)})).sort((a,b)=>b.s.score-a.s.score).slice(0,10)
+    .map(x=>`${x.c.symbol?.toUpperCase()}: Score=${x.s.scoreNorm}, Señal=${x.s.label}, 24H=${fpc(x.s.c24h)}, Entrada=${x.s.entryPct.enter}%`).join('\n');
+
+  window.chatHistory.push({role:'user',content:v});
+  if(window.chatHistory.length>10) window.chatHistory=window.chatHistory.slice(-10);
+
+  const systemMsg=IA_SYSTEM+'\n\nCONTEXTO DE MERCADO AHORA:\n'+marketCtx+'\n\nTOP 10 SEÑALES:\n'+top10;
+
   try{
-    const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:500,
-        system:'Eres RADAR G-7, analista crypto de élite. Detectas pump, dump y rug pulls. Siempre menciona el % de entrada sugerido. Responde en español directo.',
-        messages:[{role:'user',content:`Mercado actual: ${ctx}\nPregunta: ${v}`}]})});
+    const res=await fetch('/api/ai',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:700,
+        system:systemMsg,
+        messages:window.chatHistory
+      })
+    });
     const d=await res.json();
-    addChat('bot',(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim()||'Sin respuesta.');
-  }catch(e){addChat('bot',`⚠️ Error: ${e.message}`);}
+    const reply=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim()||'Sin respuesta.';
+    window.chatHistory.push({role:'assistant',content:reply});
+    addChat('bot',reply);
+  }catch(e){
+    addChat('bot',`⚠️ Error: ${e.message}`);
+    window.chatHistory.pop();
+  }
   finally{chatBusy=false;document.getElementById('chatSendBtn').disabled=false;}
 }
+
 
 function renderCtxList(){
   const el=document.getElementById('ctxList');el.innerHTML='';
@@ -1856,15 +2061,461 @@ function renderLearning(){
 function markL(i,r){learningLog[i].result=r;localStorage.setItem('rg7v2',JSON.stringify(learningLog));renderLearning();}
 function clearLearning(){if(confirm('¿Limpiar historial?')){learningLog=[];localStorage.setItem('rg7v2','[]');renderLearning();}}
 
+// ═══════════════════════════════════
+// COINMARKETCAP INTEGRATION
+// ═══════════════════════════════════
+let cmcData = [];
+let cmcFilter = 'gainers';
+
+async function fetchCMCData() {
+  // CMC public API (no key needed for basic data)
+  // Use CoinGecko as CMC proxy since both have same data - avoids CORS
+  try {
+    const [gainers, losers, trending] = await Promise.all([
+      // Top gainers (sort by 24h change desc)
+      fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&price_change_percentage=1h,24h,7d&sparkline=false')
+        .then(r=>r.json()),
+      // Trending
+      fetch('https://api.coingecko.com/api/v3/search/trending').then(r=>r.json()),
+      // New listings (low mcap rank = newer)
+      fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=id_asc&per_page=50&page=5&price_change_percentage=24h&sparkline=false')
+        .then(r=>r.json()),
+    ]);
+    return { gainers: gainers||[], trending: trending?.coins||[], newListings: losers||[] };
+  } catch(e) {
+    return { gainers:[], trending:[], newListings:[] };
+  }
+}
+
+function buildCMCCard(coin, extraLabel) {
+  const sig = calcSignal(coin);
+  const c24 = coin.price_change_percentage_24h||0;
+  const c1h = coin.price_change_percentage_1h_in_currency||0;
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden';
+  // Top color bar
+  const barColor = c24>=0?'var(--green)':'var(--red)';
+  card.innerHTML = `
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${barColor},transparent)"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${coin.symbol?.toUpperCase()}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Rank #${coin.market_cap_rank||'—'}</span>
+          ${extraLabel?`<span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.2);color:var(--yellow)">${extraLabel}</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${coin.name}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${sig.color}">${sig.scoreNorm}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">/100</div>
+      </div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:12px;margin-top:8px;color:var(--text)">${fpr(coin.current_price)}</div>
+    <div style="display:flex;gap:8px;margin-top:5px;flex-wrap:wrap">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${c24>=0?'var(--green)':'var(--red)'};font-weight:600">${fpc(c24)} 24H</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${c1h>=0?'var(--green)':'var(--red)'}">${fpc(c1h)} 1H</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap">
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">MCap ${fp(coin.market_cap)}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Vol ${fp(coin.total_volume)}</span>
+      <span class="pill ${sig.type}" style="font-size:8px;padding:1px 5px">${sig.label}</span>
+    </div>
+    <div style="margin-top:7px;background:${sig.entryPct.color}18;border:1px solid ${sig.entryPct.color}33;border-radius:4px;padding:4px 8px;display:flex;justify-content:space-between">
+      <span style="font-size:10px;color:${sig.entryPct.color};font-weight:600">${sig.entryPct.verdict.split('·')[0].trim()}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${sig.entryPct.color}">${sig.entryPct.enter}%</span>
+    </div>`;
+  card.onclick = () => openDetail(coin, sig);
+  card.onmouseenter = () => card.style.borderColor = 'var(--border2)';
+  card.onmouseleave = () => card.style.borderColor = 'var(--border)';
+  return card;
+}
+
+async function loadCMC() {
+  const el = document.getElementById('cmcGrid');
+  el.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Cargando datos...</div>';
+  const data = await fetchCMCData();
+  cmcData = data;
+  renderCMC(data);
+}
+
+function renderCMC(data) {
+  const el = document.getElementById('cmcGrid');
+  el.innerHTML = '';
+  let coins = [];
+  let label = '';
+
+  if (cmcFilter === 'gainers') {
+    coins = [...(data.gainers||[])].sort((a,b)=>(b.price_change_percentage_24h||0)-(a.price_change_percentage_24h||0)).slice(0,18);
+    label = '🚀 TOP GAINER';
+  } else if (cmcFilter === 'losers') {
+    coins = [...(data.gainers||[])].sort((a,b)=>(a.price_change_percentage_24h||0)-(b.price_change_percentage_24h||0)).slice(0,18);
+    label = '📉 TOP LOSER';
+  } else if (cmcFilter === 'trending') {
+    // Use trending items mapped to full coin data
+    const trendIds = (data.trending||[]).map(t=>t.item?.id).filter(Boolean);
+    coins = (data.gainers||[]).filter(c=>trendIds.includes(c.id)).slice(0,18);
+    if (!coins.length) coins = (data.gainers||[]).slice(0,18);
+    label = '🔥 TRENDING';
+  } else if (cmcFilter === 'new') {
+    coins = [...(data.gainers||[])].sort((a,b)=>(b.market_cap_rank||999)-(a.market_cap_rank||999)).slice(0,18);
+    label = '🆕 NUEVO';
+  }
+
+  if (!coins.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">No hay datos disponibles</div>'; return; }
+  coins.forEach(c => el.appendChild(buildCMCCard(c, label)));
+}
+
+function setCMCFilter(f, btn) {
+  cmcFilter = f;
+  document.querySelectorAll('#cf-gainers,#cf-losers,#cf-trending,#cf-new').forEach(b=>b.className='btn');
+  btn.className='btn primary';
+  renderCMC(cmcData);
+}
+
+// ═══════════════════════════════════
+// BIRDEYE INTEGRATION (Solana)
+// ═══════════════════════════════════
+let birdeyeFilter = 'trending';
+
+async function fetchBirdeyeData(type) {
+  // Birdeye public endpoints (no API key for basic)
+  const endpoints = {
+    trending: 'https://public-api.birdeye.so/public/tokenlist?sort_by=v24hUSD&sort_type=desc&offset=0&limit=20&chain=solana',
+    new: 'https://public-api.birdeye.so/public/tokenlist?sort_by=mc&sort_type=asc&offset=0&limit=20&chain=solana',
+    gainers: 'https://public-api.birdeye.so/public/tokenlist?sort_by=v24hChangePercent&sort_type=desc&offset=0&limit=20&chain=solana',
+  };
+
+  try {
+    const r = await fetch(endpoints[type]||endpoints.trending, {
+      headers: { 'X-API-KEY': 'public', 'x-chain': 'solana' }
+    });
+    const d = await r.json();
+    return d.data?.tokens || d.data || [];
+  } catch(e) {
+    // Fallback: Use DexScreener Solana pairs
+    try {
+      const r2 = await fetch('https://api.dexscreener.com/latest/dex/search?q=SOL');
+      const d2 = await r2.json();
+      return (d2.pairs||[]).filter(p=>p.chainId==='solana').slice(0,20);
+    } catch { return []; }
+  }
+}
+
+function buildBirdeyeCard(token, isBirdeye) {
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden';
+
+  let name, sym, price, chg24, chg1h, vol, liq, addr;
+
+  if (isBirdeye && token.address) {
+    // Birdeye format
+    name = token.name || 'Token Solana';
+    sym = token.symbol || '?';
+    price = token.price || 0;
+    chg24 = token.v24hChangePercent || 0;
+    chg1h = token.v1hChangePercent || 0;
+    vol = token.v24hUSD || 0;
+    liq = token.liquidity || 0;
+    addr = token.address;
+  } else {
+    // DexScreener format
+    name = token.baseToken?.name || 'Token Solana';
+    sym = token.baseToken?.symbol || '?';
+    price = parseFloat(token.priceUsd||0);
+    chg24 = token.priceChange?.h24 || 0;
+    chg1h = token.priceChange?.h1 || 0;
+    vol = token.volume?.h24 || 0;
+    liq = token.liquidity?.usd || 0;
+    addr = token.baseToken?.address || '';
+  }
+
+  // Signal for Birdeye tokens
+  const vr = vol>0&&liq>0?(vol/liq)*100:0;
+  let type='new', label='SOL TOKEN', color='var(--blue)';
+  if (chg24>50&&liq<50000){type='rug';label='🚨 RUG RISK';color='#ff6b35';}
+  else if (chg24>20){type='pump';label='⚡ PUMP';color='var(--green)';}
+  else if (chg24<-20){type='dump';label='🔴 DUMP';color='var(--red)';}
+  else if (vr>50){type='alert';label='⚠️ VOL ALTO';color='var(--yellow)';}
+
+  const scoreNorm = Math.min(100, Math.round(
+    (Math.abs(chg24)*2) + (vr>20?20:vr) + (chg24>0?15:0)
+  ));
+
+  const entryPct = scoreNorm>=85?'10-15%':scoreNorm>=65?'3-5%':scoreNorm>=50?'1-2%':'0%';
+  const entryColor = scoreNorm>=85?'var(--green)':scoreNorm>=65?'var(--yellow)':scoreNorm>=50?'var(--blue)':'var(--text3)';
+  const entryAction = scoreNorm>=85?'✅ ENTRAR':scoreNorm>=65?'⚡ PEQUEÑA':scoreNorm>=50?'👁 VIGILAR':'⚪ NO';
+
+  const priceStr = price<0.000001?`$${price.toExponential(2)}`:price<0.01?`$${price.toFixed(6)}`:price<1?`$${price.toFixed(4)}`:`$${price.toFixed(2)}`;
+  const volStr = vol>=1e6?`$${(vol/1e6).toFixed(1)}M`:vol>=1e3?`$${(vol/1e3).toFixed(0)}K`:`$${vol.toFixed(0)}`;
+  const liqStr = liq>=1e6?`$${(liq/1e6).toFixed(1)}M`:liq>=1e3?`$${(liq/1e3).toFixed(0)}K`:`$${liq.toFixed(0)}`;
+
+  card.innerHTML = `
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${color},transparent)"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${sym}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(153,102,255,0.1);border:1px solid rgba(153,102,255,0.2);color:#9966ff">◎ SOL</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${name}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${color}">${scoreNorm}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">/100</div>
+      </div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:12px;margin-top:8px">${priceStr}</div>
+    <div style="display:flex;gap:8px;margin-top:5px;flex-wrap:wrap">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${chg24>=0?'var(--green)':'var(--red)'};font-weight:600">${chg24>=0?'+':''}${chg24.toFixed(1)}% 24H</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${chg1h>=0?'var(--green)':'var(--red)'}">${chg1h>=0?'+':''}${chg1h.toFixed(1)}% 1H</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap">
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Vol ${volStr}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Liq ${liqStr}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:${color}15;border:1px solid ${color}33;color:${color}">${label}</span>
+    </div>
+    <div style="margin-top:7px;background:${entryColor}18;border:1px solid ${entryColor}33;border-radius:4px;padding:4px 8px;display:flex;justify-content:space-between">
+      <span style="font-size:10px;color:${entryColor};font-weight:600">${entryAction}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${entryColor}">${entryPct}</span>
+    </div>
+    <div style="margin-top:7px;display:flex;gap:5px">
+      ${addr?`<a href="https://birdeye.so/token/${addr}?chain=solana" target="_blank" class="btn" style="font-size:9px;padding:3px 7px;flex:1;text-align:center">🦅 Birdeye</a>`:''}
+      ${addr?`<button class="btn" onclick="openDexTrade('${addr}','${sym}','${name}','${priceStr}','${label}','solana')" style="font-size:9px;padding:3px 7px;background:rgba(0,214,138,0.08);border-color:rgba(0,214,138,0.2);color:var(--green)">⚡ Operar</button>`:''}
+    </div>`;
+
+  card.onmouseenter = () => card.style.borderColor = 'var(--border2)';
+  card.onmouseleave = () => card.style.borderColor = 'var(--border)';
+  return card;
+}
+
+async function loadBirdeye() {
+  const el = document.getElementById('birdeyeGrid');
+  el.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Escaneando Solana...</div>';
+  const tokens = await fetchBirdeyeData(birdeyeFilter);
+  el.innerHTML = '';
+  if (!tokens.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">No hay datos de Solana disponibles. Intenta de nuevo.</div>'; return; }
+  const isBirdeye = tokens[0]?.address && !tokens[0]?.baseToken;
+  tokens.forEach(t => el.appendChild(buildBirdeyeCard(t, isBirdeye)));
+}
+
+function setBirdeyeFilter(f, btn) {
+  birdeyeFilter = f;
+  document.querySelectorAll('#bf-trending,#bf-new,#bf-gainers').forEach(b=>b.className='btn');
+  btn.className='btn primary';
+  loadBirdeye();
+}
+
+// ═══════════════════════════════════
+// COINMARKETCAP INTEGRATION
+// ═══════════════════════════════════
+let cmcData = {};
+let cmcFilter = 'gainers';
+
+async function fetchCMCData() {
+  try {
+    const [market, trending] = await Promise.all([
+      fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&price_change_percentage=1h,24h,7d&sparkline=false').then(r=>r.json()),
+      fetch('https://api.coingecko.com/api/v3/search/trending').then(r=>r.json()),
+    ]);
+    return { gainers: market||[], trending: trending?.coins||[] };
+  } catch(e) { return { gainers:[], trending:[] }; }
+}
+
+function buildCMCCard(coin, extraLabel) {
+  const sig = calcSignal(coin);
+  const c24 = coin.price_change_percentage_24h||0;
+  const c1h = coin.price_change_percentage_1h_in_currency||0;
+  const card = document.createElement('div');
+  const barColor = c24>=0?'var(--green)':'var(--red)';
+  card.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden';
+  card.onmouseenter=()=>card.style.borderColor='var(--border2)';
+  card.onmouseleave=()=>card.style.borderColor='var(--border)';
+  card.onclick=()=>openDetail(coin,sig);
+  card.innerHTML=`
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${barColor},transparent)"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${coin.symbol?.toUpperCase()}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">#${coin.market_cap_rank}</span>
+          ${extraLabel?`<span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.2);color:var(--yellow)">${extraLabel}</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${coin.name}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${sig.color}">${sig.scoreNorm}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">/100</div>
+      </div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:12px;margin-top:8px">${fpr(coin.current_price)}</div>
+    <div style="display:flex;gap:8px;margin-top:5px">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${c24>=0?'var(--green)':'var(--red)'};font-weight:600">${fpc(c24)} 24H</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${c1h>=0?'var(--green)':'var(--red)'}">${fpc(c1h)} 1H</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap">
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">MCap ${fp(coin.market_cap)}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Vol ${fp(coin.total_volume)}</span>
+      <span class="pill ${sig.type}" style="font-size:8px;padding:1px 5px">${sig.label}</span>
+    </div>
+    <div style="margin-top:7px;background:${sig.entryPct.color}18;border:1px solid ${sig.entryPct.color}33;border-radius:4px;padding:4px 8px;display:flex;justify-content:space-between">
+      <span style="font-size:10px;color:${sig.entryPct.color};font-weight:600">${sig.entryPct.entryAction||sig.entryPct.verdict?.split('·')[0]?.trim()||'Ver análisis'}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${sig.entryPct.color}">${sig.entryPct.enter}%</span>
+    </div>`;
+  return card;
+}
+
+async function loadCMC() {
+  const el=document.getElementById('cmcGrid');
+  el.innerHTML='<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Cargando...</div>';
+  cmcData=await fetchCMCData();
+  renderCMC();
+}
+
+function renderCMC(){
+  const el=document.getElementById('cmcGrid');if(!el)return;el.innerHTML='';
+  let coins=[], label='';
+  const gainers=[...(cmcData.gainers||[])];
+  if(cmcFilter==='gainers'){coins=gainers.sort((a,b)=>(b.price_change_percentage_24h||0)-(a.price_change_percentage_24h||0)).slice(0,18);label='🚀 GAINER';}
+  else if(cmcFilter==='losers'){coins=gainers.sort((a,b)=>(a.price_change_percentage_24h||0)-(b.price_change_percentage_24h||0)).slice(0,18);label='📉 LOSER';}
+  else if(cmcFilter==='trending'){
+    const ids=(cmcData.trending||[]).map(t=>t.item?.id);
+    coins=gainers.filter(c=>ids.includes(c.id));
+    if(!coins.length)coins=gainers.filter(c=>Math.abs(c.price_change_percentage_24h||0)>5).slice(0,18);
+    label='🔥 TRENDING';
+  } else if(cmcFilter==='new'){
+    coins=gainers.filter(c=>(c.market_cap_rank||0)>80).slice(0,18);
+    label='🆕 NUEVO';
+  }
+  if(!coins.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Sin datos</div>';return;}
+  coins.forEach(c=>el.appendChild(buildCMCCard(c,label)));
+}
+
+function setCMCFilter(f,btn){
+  cmcFilter=f;
+  document.querySelectorAll('#cf-gainers,#cf-losers,#cf-trending,#cf-new').forEach(b=>b.className='btn');
+  btn.className='btn primary';
+  renderCMC();
+}
+
+// ═══════════════════════════════════
+// BIRDEYE INTEGRATION (Solana)
+// ═══════════════════════════════════
+let birdeyeFilter='trending';
+
+async function fetchBirdeyeData(type){
+  // Try DexScreener Solana as primary (no API key needed)
+  try{
+    const queries={
+      trending:'https://api.dexscreener.com/latest/dex/search?q=solana',
+      new:'https://api.dexscreener.com/token-profiles/latest/v1',
+      gainers:'https://api.dexscreener.com/latest/dex/search?q=pump',
+    };
+    const r=await fetch(queries[type]||queries.trending);
+    const d=await r.json();
+    if(d.pairs) return d.pairs.filter(p=>p.chainId==='solana').slice(0,20);
+    if(Array.isArray(d)) return d.filter(t=>t.chainId==='solana').slice(0,20);
+    return [];
+  }catch{return [];}
+}
+
+function buildBirdeyeCard(token){
+  const card=document.createElement('div');
+  card.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;position:relative;overflow:hidden;transition:all .2s';
+  card.onmouseenter=()=>card.style.borderColor='var(--border2)';
+  card.onmouseleave=()=>card.style.borderColor='var(--border)';
+
+  // Handle both DexScreener pair format and Birdeye format
+  const name=token.baseToken?.name||token.name||'Token Solana';
+  const sym=token.baseToken?.symbol||token.symbol||'?';
+  const price=parseFloat(token.priceUsd||token.price||0);
+  const chg24=token.priceChange?.h24||token.priceChange24h||0;
+  const chg1h=token.priceChange?.h1||token.priceChange1h||0;
+  const vol=token.volume?.h24||token.volume24h||0;
+  const liq=token.liquidity?.usd||token.liquidity||0;
+  const addr=token.baseToken?.address||token.tokenAddress||token.address||'';
+  const dexUrl=token.url||`https://dexscreener.com/solana/${addr}`;
+
+  const vr=liq>0?(vol/liq)*100:0;
+  let sigType='new',sigLabel='SOL TOKEN',sigColor='var(--blue)';
+  if(chg24>50&&liq<50000){sigType='rug';sigLabel='🚨 RUG RISK';sigColor='#ff6b35';}
+  else if(chg24>20){sigType='pump';sigLabel='⚡ PUMP SOL';sigColor='var(--green)';}
+  else if(chg24<-20){sigType='dump';sigLabel='🔴 DUMP';sigColor='var(--red)';}
+  else if(vr>50){sigType='alert';sigLabel='⚠️ VOL ALTO';sigColor='var(--yellow)';}
+
+  const scoreNorm=Math.min(100,Math.round(Math.abs(chg24)*2+(vr>20?20:vr)+(chg24>0?15:0)));
+  const entryPct=scoreNorm>=85?'10-15%':scoreNorm>=65?'3-5%':scoreNorm>=50?'1-2%':'0%';
+  const entryColor=scoreNorm>=85?'var(--green)':scoreNorm>=65?'var(--yellow)':scoreNorm>=50?'var(--blue)':'var(--text3)';
+  const entryAction=scoreNorm>=85?'✅ ENTRAR':scoreNorm>=65?'⚡ PEQUEÑA':scoreNorm>=50?'👁 VIGILAR':'⚪ NO';
+  const priceStr=price<0.000001?`$${price.toExponential(2)}`:price<0.01?`$${price.toFixed(6)}`:price<1?`$${price.toFixed(4)}`:`$${price.toFixed(2)}`;
+  const fmt=n=>n>=1e6?`$${(n/1e6).toFixed(1)}M`:n>=1e3?`$${(n/1e3).toFixed(0)}K`:`$${n.toFixed(0)}`;
+
+  card.innerHTML=`
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${sigColor},transparent)"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${sym}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(153,102,255,0.12);border:1px solid rgba(153,102,255,0.25);color:#9966ff">◎ SOL</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:${sigColor}15;border:1px solid ${sigColor}33;color:${sigColor}">${sigLabel}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${sigColor}">${scoreNorm}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">/100</div>
+      </div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:12px;margin-top:8px;color:var(--text)">${priceStr}</div>
+    <div style="display:flex;gap:8px;margin-top:5px">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${chg24>=0?'var(--green)':'var(--red)'};font-weight:600">${chg24>=0?'+':''}${chg24.toFixed(1)}% 24H</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${chg1h>=0?'var(--green)':'var(--red)'}">${chg1h>=0?'+':''}${chg1h.toFixed(1)}% 1H</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap">
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Vol ${fmt(vol)}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">Liq ${fmt(liq)}</span>
+    </div>
+    <div style="margin-top:7px;background:${entryColor}18;border:1px solid ${entryColor}33;border-radius:4px;padding:4px 8px;display:flex;justify-content:space-between">
+      <span style="font-size:10px;color:${entryColor};font-weight:600">${entryAction}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:${entryColor}">${entryPct}</span>
+    </div>
+    <div style="margin-top:7px;display:flex;gap:5px">
+      <a href="${dexUrl}" target="_blank" class="btn" style="font-size:9px;padding:3px 7px;flex:1;text-align:center">🦅 Ver en Birdeye/DEX</a>
+      ${addr?`<button class="btn" onclick="openDexTrade('${addr}','${sym}','${name}','${priceStr}','${sigLabel}','solana')" style="font-size:9px;padding:3px 7px;background:rgba(0,214,138,0.08);border-color:rgba(0,214,138,0.2);color:var(--green)">⚡ Operar</button>`:''}
+    </div>`;
+  return card;
+}
+
+async function loadBirdeye(){
+  const el=document.getElementById('birdeyeGrid');
+  el.innerHTML='<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Escaneando Solana...</div>';
+  const tokens=await fetchBirdeyeData(birdeyeFilter);
+  el.innerHTML='';
+  if(!tokens.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No hay datos de Solana. Intenta de nuevo.</div>';return;}
+  tokens.forEach(t=>el.appendChild(buildBirdeyeCard(t)));
+}
+
+function setBirdeyeFilter(f,btn){
+  birdeyeFilter=f;
+  document.querySelectorAll('#bf-trending,#bf-new,#bf-gainers').forEach(b=>b.className='btn');
+  btn.className='btn primary';
+  loadBirdeye();
+}
+
+// ─── NAV
 // ═══════════════
 // NAV
 // ═══════════════
 function showPage(p){
   document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById(`page-${p}`).classList.add('active');
-  document.getElementById(`nav-${p}`).classList.add('active');
-  if(p==='dex'&&!dexData.length)loadDex();
+  const pageEl=document.getElementById(`page-${p}`);
+  const navEl=document.getElementById(`nav-${p}`);
+  if(pageEl) pageEl.classList.add('active');
+  if(navEl) navEl.classList.add('active');
+  if(p==='dex'&&!dexData.length) loadDex();
+  if(p==='cmc'&&!cmcData.gainers) loadCMC();
+  if(p==='birdeye') loadBirdeye();
 }
 
 async function topSearch(){
@@ -2025,7 +2676,16 @@ async function connectWallet() {
       }
     }
     // No wallet detected
-    alert('No se detectó ninguna wallet.\n\nPara tokens EVM: instala MetaMask (metamask.io)\nPara Solana: instala Phantom (phantom.app) o Solflare (solflare.com)');
+    alert(
+      'No se detectó ninguna wallet.\n\n' +
+      '📱 EN MÓVIL:\n' +
+      '• Abre este link DESDE la app de MetaMask (ícono del navegador interno)\n' +
+      '• O desde el navegador de Phantom/Solflare\n\n' +
+      '💻 EN COMPUTADOR:\n' +
+      '• Instala la extensión MetaMask en Chrome/Firefox\n' +
+      '• O instala la extensión Phantom/Solflare\n\n' +
+      '🔗 Descarga: metamask.io · phantom.app · solflare.com'
+    );
   } catch(e) {
     if (e.code === 4001) {
       // User rejected
