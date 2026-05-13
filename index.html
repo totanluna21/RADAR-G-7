@@ -308,6 +308,51 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 @keyframes gSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes scanRot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── WALLET CONNECT ── */
+.wallet-bar{position:fixed;bottom:0;left:220px;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:12px;z-index:300;height:46px;}
+.wallet-bar.hidden{display:none;}
+.wlt-status{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:11px;}
+.wlt-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);}
+.wlt-dot.connected{background:var(--green);animation:pulse 2s infinite;}
+.wlt-addr{color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;}
+.wlt-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:4px 12px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
+.wlt-btn:hover{color:var(--text);border-color:var(--red);}
+.wlt-btn.connect{background:var(--red);color:#fff;border-color:var(--red);}
+.wlt-btn.connect:hover{background:var(--red2);}
+.wlt-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
+.wlt-info{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+
+/* Trade modal */
+.trade-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:600;display:none;align-items:center;justify-content:center;}
+.trade-modal.open{display:flex;}
+.trade-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:400px;max-width:95vw;padding:20px;position:relative;}
+.trade-close{position:absolute;right:16px;top:16px;color:var(--text3);font-size:18px;cursor:pointer;}
+.trade-close:hover{color:var(--text);}
+.trade-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;}
+.trade-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:16px;}
+.trade-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px;}
+.trade-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;color:var(--text3);}
+.trade-tab.buy.active{background:var(--green2);color:var(--green);}
+.trade-tab.sell.active{background:var(--red3);color:var(--red);}
+.trade-input-wrap{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px;margin-bottom:10px;}
+.trade-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:5px;}
+.trade-input{background:none;border:none;color:var(--text);font-family:'Syne',sans-serif;font-size:22px;font-weight:700;width:100%;}
+.trade-input::placeholder{color:var(--text3);}
+.trade-dex-select{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;}
+.dex-option{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px;text-align:center;cursor:pointer;transition:all .15s;}
+.dex-option:hover,.dex-option.active{border-color:var(--red);background:var(--red3);}
+.dex-option .do-name{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text);}
+.dex-option .do-chain{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:2px;}
+.trade-info{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--text3);}
+.trade-info-row{display:flex;justify-content:space-between;padding:3px 0;}
+.trade-info-row span:last-child{color:var(--text);font-family:'DM Mono',monospace;}
+.trade-execute{width:100%;padding:12px;border-radius:6px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;letter-spacing:1px;}
+.trade-execute.buy{background:var(--green);color:#000;}
+.trade-execute.sell{background:var(--red);color:#fff;}
+.trade-execute:hover{filter:brightness(1.1);}
+.trade-execute:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed;}
+.security-note{margin-top:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:5px;padding:8px 10px;font-size:10px;color:var(--yellow);line-height:1.5;}
 </style>
 </head>
 <body>
@@ -629,14 +674,18 @@ function calcEntryPct(score,type,vr,c1h,c24h,rugSc){
 // FETCH DATA
 // ═══════════════
 async function fetchMarket(){
-  const r=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=1h,24h,7d&sparkline=false');
+  const r=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&price_change_percentage=1h,24h,7d&sparkline=false');
   if(!r.ok)throw new Error('CoinGecko error');
   return r.json();
 }
 
 async function fetchDexTrending(){
   try{
-    const r=await fetch('https://api.dexscreener.com/token-boosts/top/v1');
+    // Use search for tokens with high activity - returns full token data with names
+    const endpoints = [
+      'https://api.dexscreener.com/token-boosts/top/v1',
+    ];
+    const r=await fetch(endpoints[0]);
     const d=await r.json();
     return Array.isArray(d)?d.slice(0,20):[];
   }catch{return[];}
@@ -648,6 +697,31 @@ async function fetchDexNew(){
     const d=await r.json();
     return Array.isArray(d)?d.slice(0,20):[];
   }catch{return[];}
+}
+
+// Get token name directly from DexScreener search (most reliable)
+async function getTokenNameFromDex(address, chain) {
+  try {
+    // Method 1: direct token lookup
+    const r1 = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
+    const d1 = await r1.json();
+    if (d1.pairs && d1.pairs.length > 0) {
+      const pair = d1.pairs[0];
+      return {
+        name: pair.baseToken?.name || '',
+        symbol: pair.baseToken?.symbol || '',
+        price: pair.priceUsd || null,
+        priceChange24h: pair.priceChange?.h24 ?? null,
+        priceChange1h: pair.priceChange?.h1 ?? null,
+        volume24h: pair.volume?.h24 || 0,
+        liquidity: pair.liquidity?.usd || 0,
+        url: pair.url || '',
+        dexId: pair.dexId || '',
+        chainId: pair.chainId || chain,
+      };
+    }
+  } catch(e) {}
+  return null;
 }
 
 async function fetchDexPairs(tokenAddr,chain){
@@ -939,47 +1013,27 @@ async function renderDex(data) {
 
     if (t.tokenAddress) {
       try {
-        const pair = await fetchPairInfo(t.tokenAddress, chain);
-        if (pair && pair.baseToken?.name) {
-          tokenName = pair.baseToken.name;
-          tokenSym = pair.baseToken.symbol || tokenSym;
-          const p = parseFloat(pair.priceUsd||0);
+        const info = await getTokenNameFromDex(t.tokenAddress, chain);
+        if (info) {
+          tokenName = info.name || '';
+          tokenSym = info.symbol || '';
+          const p = parseFloat(info.price||0);
           priceStr = p ? (p<0.000001?`$${p.toExponential(2)}`:p<0.01?`$${p.toFixed(6)}`:p<1?`$${p.toFixed(4)}`:`$${p.toLocaleString('en-US',{maximumFractionDigits:4})}`) : '';
-          liqUsd = pair.liquidity?.usd || 0;
-          volUsd = pair.volume?.h24 || 0;
+          liqUsd = info.liquidity || 0;
+          volUsd = info.volume24h || 0;
           vol = volUsd?`Vol $${volUsd>=1e6?(volUsd/1e6).toFixed(1)+'M':volUsd>=1e3?(volUsd/1e3).toFixed(0)+'K':volUsd.toFixed(0)}`:'';
           liq = liqUsd?`Liq $${liqUsd>=1e6?(liqUsd/1e6).toFixed(1)+'M':liqUsd>=1e3?(liqUsd/1e3).toFixed(0)+'K':liqUsd.toFixed(0)}`:'';
-          priceChg = pair.priceChange?.h24 ?? null;
-          priceChgH1 = pair.priceChange?.h1 ?? null;
-          pairUrl = pair.url || `https://dexscreener.com/${chain}/${t.tokenAddress}`;
-        } else {
-          // Fallback: search by address
-          try {
-            const sr = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${t.tokenAddress}`);
-            const sd = await sr.json();
-            const fp2 = sd.pairs?.[0];
-            if (fp2) {
-              tokenName = fp2.baseToken?.name || '';
-              tokenSym = fp2.baseToken?.symbol || '';
-              const p = parseFloat(fp2.priceUsd||0);
-              priceStr = p?(p<0.01?`$${p.toFixed(6)}`:`$${p.toFixed(4)}`):'';
-              liqUsd = fp2.liquidity?.usd || 0;
-              volUsd = fp2.volume?.h24 || 0;
-              vol = volUsd?`Vol $${volUsd>=1e6?(volUsd/1e6).toFixed(1)+'M':volUsd>=1e3?(volUsd/1e3).toFixed(0)+'K':volUsd.toFixed(0)}`:'';
-              liq = liqUsd?`Liq $${liqUsd>=1e6?(liqUsd/1e6).toFixed(1)+'M':liqUsd>=1e3?(liqUsd/1e3).toFixed(0)+'K':liqUsd.toFixed(0)}`:'';
-              priceChg = fp2.priceChange?.h24 ?? null;
-              priceChgH1 = fp2.priceChange?.h1 ?? null;
-              pairUrl = fp2.url || `https://dexscreener.com/${chain}/${t.tokenAddress}`;
-            }
-          } catch(e2) {}
+          priceChg = info.priceChange24h;
+          priceChgH1 = info.priceChange1h;
+          pairUrl = info.url || `https://dexscreener.com/${chain}/${t.tokenAddress}`;
         }
       } catch(e) {}
     }
 
-    // Last resort display
+    // Fallback names
     if (!tokenName) tokenName = t.description || t.tokenName || '';
-    if (!tokenSym) tokenSym = t.tokenAddress ? t.tokenAddress.slice(0,6)+'...'+t.tokenAddress.slice(-4) : '?';
-    if (!tokenName) tokenName = `Contrato ${t.tokenAddress?.slice(0,8)||'desconocido'}...`;
+    if (!tokenSym) tokenSym = t.tokenAddress ? `${t.tokenAddress.slice(0,6)}...${t.tokenAddress.slice(-4)}` : '?';
+    if (!tokenName) tokenName = `Token en ${chain}`;
 
     // Compute real score
     const scoreNorm = calcDexScore(sig.boost, priceChg, liqUsd, volUsd);
@@ -1040,8 +1094,9 @@ async function renderDex(data) {
       </div>
       <div style="margin-top:5px;font-size:10px;color:var(--text3)">${sigType==='rug'?'🚨 Riesgo rug pull — NO ENTRAR':sigType==='pump'?'⚡ Pump potencial detectado':sigType==='dump'?'🔴 Dump activo':sigType==='alert'?'⚠️ Actividad inusual':'🆕 Token nuevo en DEX'}</div>
       <div style="margin-top:7px;display:flex;gap:5px">
-        <a href="${pairUrl||'https://dexscreener.com/'+chain+'/'+t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px;flex:1;text-align:center">📡 DexScreener</a>
-        ${t.tokenAddress?`<a href="https://dexscreener.com/search?q=${t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">🔍</a>`:''}
+        <a href="${pairUrl||'https://dexscreener.com/'+chain+'/'+t.tokenAddress}" target="_blank" class="btn" style="font-size:9px;padding:3px 8px">📡 DEX</a>
+        <button class="btn" onclick="openDexTrade('${t.tokenAddress}','${tokenSym}','${tokenName}','${priceStr}','${sigLabel}','${chain}')" style="font-size:9px;padding:3px 8px;background:rgba(0,214,138,0.08);border-color:rgba(0,214,138,0.2);color:var(--green)">🟢 Comprar</button>
+        <button class="btn" onclick="openDexTrade('${t.tokenAddress}','${tokenSym}','${tokenName}','${priceStr}','${sigLabel}','${chain}'); document.getElementById('tabSell').click()" style="font-size:9px;padding:3px 8px;background:rgba(232,48,58,0.08);border-color:rgba(232,48,58,0.2);color:var(--red)">🔴 Vender</button>
       </div>`;
 
         el.appendChild(card);
@@ -1077,7 +1132,9 @@ async function openDetail(coin,sig){
     <a class="det-lnk" href="https://t.me/s/${sym?.toLowerCase()}" target="_blank">📱 Telegram</a>
     <a class="det-lnk" href="https://etherscan.io/search?q=${sym}" target="_blank">🔗 On Chain</a>
     <a class="det-lnk" href="https://dexscreener.com/search?q=${sym}" target="_blank">📡 DexScreener</a>
-    <a class="det-lnk" href="https://www.coingecko.com/en/coins/${coin.id}" target="_blank">🦎 CoinGecko</a>`;
+    <a class="det-lnk" href="https://www.coingecko.com/en/coins/${coin.id}" target="_blank">🦎 CoinGecko</a>
+    <button class="det-lnk" onclick="openTrade(currentCoin,'buy')" style="background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.3);color:var(--green);cursor:pointer">🟢 Comprar</button>
+    <button class="det-lnk" onclick="openTrade(currentCoin,'sell')" style="background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.3);color:var(--red);cursor:pointer">🔴 Vender</button>`;
 
   addToLearning(coin,sig);
   showTab('scoring');
@@ -1571,7 +1628,364 @@ async function refreshAll(){
 
 // INIT
 loadData();
-setInterval(loadData,90000);
+setInterval(loadData,30000);
+
+
+// ══════════════════════════════════
+// WALLET — Sin custodia, 100% seguro
+// ══════════════════════════════════
+let walletState = {
+  connected: false,
+  address: null,
+  shortAddr: null,
+  provider: null,
+};
+
+let tradeState = {
+  coin: null,
+  sig: null,
+  tab: 'buy',
+  dex: 'uniswap',
+  amount: '',
+};
+
+// Adjust main content when wallet bar shows
+document.querySelector('.main').style.paddingBottom = '46px';
+
+async function connectWallet() {
+  // Security: only connect via official wallet APIs, never ask for private keys
+  try {
+    // Try MetaMask / EVM wallet
+    if (typeof window.ethereum !== 'undefined') {
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+      if (accounts && accounts.length > 0) {
+        walletState.connected = true;
+        walletState.address = accounts[0];
+        walletState.shortAddr = accounts[0].slice(0,6) + '...' + accounts[0].slice(-4);
+        walletState.provider = 'metamask';
+        updateWalletUI();
+        return;
+      }
+    }
+    // Try Phantom (Solana)
+    if (typeof window.solana !== 'undefined' && window.solana.isPhantom) {
+      const resp = await window.solana.connect();
+      if (resp.publicKey) {
+        walletState.connected = true;
+        walletState.address = resp.publicKey.toString();
+        walletState.shortAddr = walletState.address.slice(0,6) + '...' + walletState.address.slice(-4);
+        walletState.provider = 'phantom';
+        updateWalletUI();
+        return;
+      }
+    }
+    // Try Solflare (Solana)
+    if (typeof window.solflare !== 'undefined' && window.solflare.isSolflare) {
+      await window.solflare.connect();
+      if (window.solflare.publicKey) {
+        walletState.connected = true;
+        walletState.address = window.solflare.publicKey.toString();
+        walletState.shortAddr = walletState.address.slice(0,6) + '...' + walletState.address.slice(-4);
+        walletState.provider = 'solflare';
+        updateWalletUI();
+        // Listen for disconnect
+        window.solflare.on('disconnect', () => disconnectWallet());
+        return;
+      }
+    }
+    // No wallet detected
+    alert('No se detectó ninguna wallet.\n\nPara tokens EVM: instala MetaMask (metamask.io)\nPara Solana: instala Phantom (phantom.app) o Solflare (solflare.com)');
+  } catch(e) {
+    if (e.code === 4001) {
+      // User rejected
+    } else {
+      console.error('Wallet connect error:', e.message);
+    }
+  }
+}
+
+function disconnectWallet() {
+  try {
+    if (walletState.provider === 'solflare' && window.solflare) window.solflare.disconnect();
+    if (walletState.provider === 'phantom' && window.solana) window.solana.disconnect();
+  } catch(e) {}
+  walletState = { connected: false, address: null, shortAddr: null, provider: null };
+  updateWalletUI();
+}
+
+function updateWalletUI() {
+  const dot = document.getElementById('wltDot');
+  const label = document.getElementById('wltLabel');
+  const addr = document.getElementById('wltAddr');
+  const btn = document.getElementById('wltBtn');
+  const disc = document.getElementById('wltDisconnect');
+  const quickBuy = document.getElementById('quickBuyBtn');
+
+  if (walletState.connected) {
+    dot.classList.add('connected');
+    label.textContent = walletState.provider === 'phantom' ? 'Phantom' : walletState.provider === 'solflare' ? 'Solflare' : 'MetaMask';
+    label.style.color = 'var(--green)';
+    addr.textContent = walletState.shortAddr;
+    btn.style.display = 'none';
+    disc.style.display = 'block';
+    quickBuy.disabled = false;
+    // Update trade button
+    document.getElementById('tradeExecBtn').disabled = false;
+  } else {
+    dot.classList.remove('connected');
+    label.textContent = 'Sin wallet';
+    label.style.color = 'var(--text3)';
+    addr.textContent = '';
+    btn.style.display = 'block';
+    disc.style.display = 'none';
+    quickBuy.disabled = true;
+    document.getElementById('tradeExecBtn').disabled = true;
+  }
+  updateTradeBtn();
+}
+
+// ── TRADE MODAL ──
+function openTrade(coin, tab = 'buy') {
+  tradeState.coin = coin;
+  tradeState.tab = tab;
+
+  if (coin) {
+    const sig = calcSignal(coin);
+    tradeState.sig = sig;
+    document.getElementById('tradeTitle').textContent = `Operar ${coin.symbol?.toUpperCase()} / USDT`;
+    document.getElementById('tradeSub').textContent = `${sig.label} · Score ${sig.scoreNorm}/100`;
+    document.getElementById('ti-token').textContent = `${coin.name} ($${coin.symbol?.toUpperCase()})`;
+    document.getElementById('ti-price').textContent = fpr(coin.current_price);
+    document.getElementById('ti-signal').textContent = sig.label;
+    document.getElementById('ti-signal').style.color = sig.color;
+  }
+
+  setTradeTab(tab);
+  document.getElementById('tradeModal').classList.add('open');
+  updateTradeBtn();
+}
+
+function openDexTrade(tokenAddr, tokenSym, tokenName, price, sig, chain) {
+  tradeState.coin = { id: tokenAddr, symbol: tokenSym, name: tokenName, current_price: parseFloat(price)||0, dexAddr: tokenAddr, dexChain: chain };
+  tradeState.sig = { label: sig, scoreNorm: 0, color: 'var(--text)' };
+  document.getElementById('tradeTitle').textContent = `Operar ${tokenSym}`;
+  document.getElementById('tradeSub').textContent = `Token DEX en ${chain}`;
+  document.getElementById('ti-token').textContent = `${tokenName} (${tokenSym})`;
+  document.getElementById('ti-price').textContent = price || 'Ver en DEX';
+  document.getElementById('ti-signal').textContent = sig;
+  setTradeTab('buy');
+  document.getElementById('tradeModal').classList.add('open');
+  updateTradeBtn();
+}
+
+function closeTrade() {
+  document.getElementById('tradeModal').classList.remove('open');
+  document.getElementById('tradeAmount').value = '';
+}
+
+function setTradeTab(tab) {
+  tradeState.tab = tab;
+  document.getElementById('tabBuy').classList.toggle('active', tab === 'buy');
+  document.getElementById('tabSell').classList.toggle('active', tab === 'sell');
+  const execBtn = document.getElementById('tradeExecBtn');
+  execBtn.className = `trade-execute ${tab}`;
+  updateTradeBtn();
+}
+
+function selectDex(el, dex) {
+  document.querySelectorAll('.dex-option').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+  tradeState.dex = dex;
+  const names = {uniswap:'Uniswap',jupiter:'Jupiter',pancake:'PancakeSwap',raydium:'Raydium',aerodrome:'Aerodrome',orca:'Orca'};
+  document.getElementById('ti-dex').textContent = names[dex] || dex;
+}
+
+function updateTradeInfo() {
+  tradeState.amount = document.getElementById('tradeAmount').value;
+  updateTradeBtn();
+}
+
+function updateTradeBtn() {
+  const btn = document.getElementById('tradeExecBtn');
+  const amt = parseFloat(document.getElementById('tradeAmount').value) || 0;
+  if (!walletState.connected) {
+    btn.textContent = 'Conecta tu wallet para operar';
+    btn.disabled = true;
+  } else if (amt <= 0) {
+    btn.textContent = 'Ingresa un monto';
+    btn.disabled = true;
+  } else {
+    const action = tradeState.tab === 'buy' ? 'COMPRAR' : 'VENDER';
+    btn.textContent = `${action} ${tradeState.coin?.symbol?.toUpperCase() || 'TOKEN'} — Abrir en DEX`;
+    btn.disabled = false;
+  }
+}
+
+function executeTrade() {
+  if (!walletState.connected) return;
+  const coin = tradeState.coin;
+  if (!coin) return;
+
+  // Security: open official DEX in new tab — NEVER send funds directly
+  // The user signs the transaction on the DEX with their own wallet
+  const sym = coin.symbol?.toUpperCase() || '';
+  const addr = coin.dexAddr || coin.id || '';
+  const chain = coin.dexChain || 'ethereum';
+  const dex = tradeState.dex;
+
+  let url = '';
+
+  if (dex === 'uniswap') {
+    if (addr && addr.startsWith('0x')) {
+      url = `https://app.uniswap.org/#/swap?outputCurrency=${addr}&chain=${chain}`;
+    } else {
+      url = `https://app.uniswap.org/#/swap?outputCurrency=${sym}`;
+    }
+  } else if (dex === 'jupiter') {
+    url = `https://jup.ag/swap/SOL-${sym}`;
+  } else if (dex === 'pancake') {
+    if (addr && addr.startsWith('0x')) {
+      url = `https://pancakeswap.finance/swap?outputCurrency=${addr}`;
+    } else {
+      url = `https://pancakeswap.finance/swap`;
+    }
+  } else if (dex === 'raydium') {
+    url = `https://raydium.io/swap/?outputMint=${addr || sym}`;
+  } else if (dex === 'aerodrome') {
+    url = `https://aerodrome.finance/swap?to=${addr}`;
+  } else if (dex === 'orca') {
+    url = `https://www.orca.so/?tokenOut=${addr || sym}`;
+  }
+
+  if (url) {
+    // Log to learning
+    if (coin.current_price) {
+      const entry = {
+        id: coin.id || addr,
+        sym: sym,
+        name: coin.name || sym,
+        signal: tradeState.sig?.label || 'Manual',
+        score: tradeState.sig?.scoreNorm || 0,
+        price: coin.current_price,
+        c24h: 0,
+        vr: '—',
+        type: tradeState.tab,
+        enter: tradeState.amount,
+        timestamp: new Date().toISOString(),
+        result: 'pending',
+        action: tradeState.tab === 'buy' ? 'COMPRA' : 'VENTA',
+      };
+      learningLog.unshift(entry);
+      if (learningLog.length > 50) learningLog = learningLog.slice(0, 50);
+      localStorage.setItem('rg7v2', JSON.stringify(learningLog));
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+    closeTrade();
+  }
+}
+
+// Listen for Solflare events
+if (typeof window.solflare !== 'undefined') {
+  window.solflare.on('accountChanged', (publicKey) => {
+    if (!publicKey) { disconnectWallet(); return; }
+    walletState.address = publicKey.toString();
+    walletState.shortAddr = walletState.address.slice(0,6) + '...' + walletState.address.slice(-4);
+    updateWalletUI();
+  });
+}
+
+// Listen for MetaMask/EVM wallet events
+if (typeof window.ethereum !== 'undefined') {
+  window.ethereum.on('accountsChanged', (accounts) => {
+    if (accounts.length === 0) {
+      disconnectWallet();
+    } else {
+      walletState.address = accounts[0];
+      walletState.shortAddr = accounts[0].slice(0,6) + '...' + accounts[0].slice(-4);
+      updateWalletUI();
+    }
+  });
+  window.ethereum.on('chainChanged', () => {
+    // Chain changed — no action needed, DEX links adapt
+  });
+}
+
 </script>
+
+<!-- WALLET BAR -->
+<div class="wallet-bar" id="walletBar">
+  <div class="wlt-status">
+    <div class="wlt-dot" id="wltDot"></div>
+    <span id="wltLabel" style="color:var(--text3)">Sin wallet</span>
+  </div>
+  <span class="wlt-addr" id="wltAddr"></span>
+  <button class="wlt-btn connect" id="wltBtn" onclick="connectWallet()">Conectar Wallet</button>
+  <div class="wlt-sep"></div>
+  <span class="wlt-info">🔒 MetaMask · Phantom · Solflare</span>
+  <div style="margin-left:auto;display:flex;gap:6px">
+    <button class="wlt-btn" onclick="openTrade(null,'buy')" id="quickBuyBtn" disabled>⚡ Compra rápida</button>
+    <button class="wlt-btn" onclick="disconnectWallet()" id="wltDisconnect" style="display:none">Desconectar</button>
+  </div>
+</div>
+
+<!-- TRADE MODAL -->
+<div class="trade-modal" id="tradeModal">
+  <div class="trade-box">
+    <span class="trade-close" onclick="closeTrade()">✕</span>
+    <div class="trade-title" id="tradeTitle">Operar Token</div>
+    <div class="trade-sub" id="tradeSub">Selecciona DEX y monto</div>
+
+    <div class="trade-tabs">
+      <div class="trade-tab buy active" id="tabBuy" onclick="setTradeTab('buy')">🟢 COMPRAR</div>
+      <div class="trade-tab sell" id="tabSell" onclick="setTradeTab('sell')">🔴 VENDER</div>
+    </div>
+
+    <div class="trade-input-wrap">
+      <div class="trade-label">MONTO (USD)</div>
+      <input class="trade-input" id="tradeAmount" type="number" placeholder="0.00" min="0" oninput="updateTradeInfo()"/>
+    </div>
+
+    <div class="trade-label" style="margin-bottom:6px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px">SELECCIONA DEX</div>
+    <div class="trade-dex-select" id="dexSelect">
+      <div class="dex-option active" onclick="selectDex(this,'uniswap')" data-dex="uniswap">
+        <div class="do-name">Uniswap</div><div class="do-chain">ETH / ARB / OP</div>
+      </div>
+      <div class="dex-option" onclick="selectDex(this,'jupiter')" data-dex="jupiter">
+        <div class="do-name">Jupiter</div><div class="do-chain">Solana</div>
+      </div>
+      <div class="dex-option" onclick="selectDex(this,'pancake')" data-dex="pancake">
+        <div class="do-name">PancakeSwap</div><div class="do-chain">BSC / ETH</div>
+      </div>
+      <div class="dex-option" onclick="selectDex(this,'raydium')" data-dex="raydium">
+        <div class="do-name">Raydium</div><div class="do-chain">Solana</div>
+      </div>
+      <div class="dex-option" onclick="selectDex(this,'aerodrome')" data-dex="aerodrome">
+        <div class="do-name">Aerodrome</div><div class="do-chain">Base</div>
+      </div>
+      <div class="dex-option" onclick="selectDex(this,'orca')" data-dex="orca">
+        <div class="do-name">Orca</div><div class="do-chain">Solana</div>
+      </div>
+    </div>
+
+    <div class="trade-info" id="tradeInfo">
+      <div class="trade-info-row"><span>Token</span><span id="ti-token">—</span></div>
+      <div class="trade-info-row"><span>Precio actual</span><span id="ti-price">—</span></div>
+      <div class="trade-info-row"><span>Señal RADAR</span><span id="ti-signal">—</span></div>
+      <div class="trade-info-row"><span>Slippage</span><span id="ti-slippage">0.5%</span></div>
+      <div class="trade-info-row"><span>DEX seleccionado</span><span id="ti-dex">Uniswap</span></div>
+    </div>
+
+    <button class="trade-execute buy" id="tradeExecBtn" onclick="executeTrade()" disabled>
+      Conecta tu wallet para operar
+    </button>
+
+    <div class="security-note">
+      🔒 <strong>100% Sin custodia</strong> — RADAR G-7 nunca toca tus fondos ni accede a tus llaves privadas. Soporta MetaMask, Phantom y Solflare. Al ejecutar, se abre el DEX oficial con el par precargado. Tú firmas con tu wallet. Tus llaves nunca salen de tu dispositivo.
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
