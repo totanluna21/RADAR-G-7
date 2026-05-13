@@ -832,7 +832,10 @@ async function fetchFearGreed(){
 
 async function fetchFundingRate(){
   try{
-    const r=await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),5000);
+    const r=await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1',{signal:controller.signal});
+    clearTimeout(timeout);
     const d=await r.json();
     return d?.[0]||null;
   }catch{return null;}
@@ -860,59 +863,34 @@ async function fetchLiquidations(){
 }
 
 async function fetchNews(){
-  // Try multiple sources — pick whichever responds
-  const sources = [
-    // CoinGecko news (CORS-friendly)
-    async () => {
-      const r = await fetch('https://api.coingecko.com/api/v3/news?per_page=20');
-      const d = await r.json();
-      return (d.data||[]).map(n=>({
-        title: n.title,
-        url: n.url,
-        source: n.author?.name||'CoinGecko',
-        votes: { positive: n.positive_votes_count||0, negative: n.negative_votes_count||0 }
+  // CoinGecko news - most reliable, no CORS issues
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/news?per_page=20');
+    const d=await r.json();
+    if(d.data&&d.data.length){
+      return d.data.map(n=>({
+        title:n.title||'',
+        url:n.url||'',
+        source:n.author?.name||'CoinGecko',
+        votes:{positive:n.positive_votes_count||1,negative:n.negative_votes_count||0}
       }));
-    },
-    // Messari (public RSS via allorigins proxy)
-    async () => {
-      const rss = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent('https://messari.io/rss/news.xml'));
-      const d = await rss.json();
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(d.contents, 'text/xml');
-      const items = [...xml.querySelectorAll('item')].slice(0,15);
-      return items.map(item=>({
-        title: item.querySelector('title')?.textContent||'',
-        url: item.querySelector('link')?.textContent||'',
-        source: 'Messari',
-        votes: {positive:1, negative:0}
-      }));
-    },
-  ];
-
-  for (const source of sources) {
-    try {
-      const results = await source();
-      if (results && results.length > 0) return results;
-    } catch(e) {}
-  }
+    }
+  }catch(e){}
+  // Fallback: generate from market data
   return [];
 }
 
 async function fetchWhaleAlerts(){
-  try{
-    // Use Whale Alert free tier via public API
-    const r=await fetch('https://api.whale-alert.io/v1/transactions?api_key=free&min_value=1000000&limit=10');
-    const d=await r.json();
-    return d.transactions||[];
-  }catch{
-    // Simulate whale activity from CoinGecko large moves
-    return [];
-  }
+  // Use large volume movers from allCoins as whale proxy (no external API needed)
+  return [];
 }
 
 async function fetchBTCDominance(){
   try{
-    const r=await fetch('https://api.coingecko.com/api/v3/global');
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),5000);
+    const r=await fetch('https://api.coingecko.com/api/v3/global',{signal:controller.signal});
+    clearTimeout(timeout);
     const d=await r.json();
     return d.data;
   }catch{return null;}
@@ -966,19 +944,29 @@ function renderLiquidations(data){
   if(!el) return;
   if(data && data.openInterest){
     const oi=parseFloat(data.openInterest)/1e9;
-    const vol=data.quoteVolume?parseFloat(data.quoteVolume)/1e9:null;
     const chg=data.priceChange?parseFloat(data.priceChange):null;
-    el.textContent='$'+oi.toFixed(1)+'B';
-    el.style.color=oi>15?'var(--red)':oi>10?'var(--yellow)':'var(--green)';
+    el.textContent='$'+oi.toFixed(2)+'B';
+    el.style.color=oi>20?'var(--red)':oi>12?'var(--yellow)':'var(--green)';
     if(sub){
-      let txt='OI BTC Binance Futures';
-      if(chg!==null) txt+=` · ${chg>=0?'+':''}${chg.toFixed(2)}%`;
-      if(oi>15) txt+=' · ⚠️ OI alto';
+      let txt=`BTC OI Binance`;
+      if(chg!==null) txt+=` · BTC ${chg>=0?'+':''}${parseFloat(chg).toFixed(2)}%`;
+      if(oi>20) txt+=' ⚠️';
       sub.textContent=txt;
+    }
+  } else if(data===null){
+    // Use BTC price change from allCoins as fallback
+    const btc=allCoins.find(c=>c.id==='bitcoin');
+    if(btc&&el){
+      el.textContent=`$${(btc.total_volume/1e9).toFixed(1)}B`;
+      el.style.color='var(--yellow)';
+      if(sub) sub.textContent=`Vol BTC 24H · ${fpc(btc.price_change_percentage_24h)}`;
+    } else {
+      el.textContent='—';
+      if(sub) sub.textContent='Sin datos';
     }
   } else {
     el.textContent='—';
-    if(sub) sub.textContent='Cargando Binance...';
+    if(sub) sub.textContent='Cargando...';
   }
 }
 
@@ -987,36 +975,40 @@ function renderNews(news){
   const sub=document.getElementById('newsSub');
   const ticker=document.getElementById('newsTicker');
 
-  if(!news||!news.length){
-    // Show top movers as news proxy
-    const movers=allCoins.slice(0,5).map(c=>{
+  // Always show something in ticker using market data
+  const buildMarketTicker=()=>{
+    if(!allCoins.length) return 'RADAR G-7 · Datos cargando...';
+    const movers=[...allCoins].sort((a,b)=>Math.abs(b.price_change_percentage_24h||0)-Math.abs(a.price_change_percentage_24h||0)).slice(0,8);
+    return movers.map(c=>{
       const chg=c.price_change_percentage_24h||0;
-      const icon=chg>5?'🟢':chg<-5?'🔴':'⚪';
-      return `${icon} ${c.name}: ${chg>=0?'+':''}${chg.toFixed(1)}% 24H`;
+      return `${chg>=0?'🟢':'🔴'} ${c.name} (${c.symbol?.toUpperCase()}): ${chg>=0?'+':''}${chg.toFixed(1)}%`;
     }).join('   ·   ');
-    if(el) el.textContent='—';
-    if(sub) sub.textContent='Usando movimientos de mercado';
+  };
+
+  if(!news||!news.length){
+    if(el){el.textContent='—';el.style.color='var(--text3)';}
+    if(sub) sub.textContent='Movimientos del mercado en vivo';
     if(ticker){
-      ticker.textContent=movers||'Cargando datos de mercado...';
+      ticker.textContent=buildMarketTicker();
       ticker.style.animation='none';
-      setTimeout(()=>ticker.style.animation='ticker 35s linear infinite',10);
+      setTimeout(()=>ticker.style.animation='ticker 40s linear infinite',10);
     }
     return;
   }
 
-  if(el) el.textContent=news.length;
+  if(el){el.textContent=news.length;el.style.color='var(--blue)';}
   const neg=news.filter(n=>(n.votes?.negative||0)>(n.votes?.positive||0)).length;
-  const pos=news.length-neg;
-  if(sub) sub.textContent=`${pos} positivas · ${neg} negativas`;
+  if(sub) sub.textContent=`${news.length-neg} positivas · ${neg} negativas · CoinGecko`;
 
   if(ticker){
-    const items=news.slice(0,12).map(n=>{
-      const sentiment=(n.votes?.negative||0)>(n.votes?.positive||0)?'🔴':'🟢';
-      return `${sentiment} ${n.title}`;
+    const newsItems=news.slice(0,10).map(n=>{
+      const s=(n.votes?.negative||0)>(n.votes?.positive||0)?'🔴':'🟢';
+      return `${s} ${n.title}`;
     }).join('   ·   ');
-    ticker.textContent=items;
+    const combined=newsItems+'   ·   '+buildMarketTicker();
+    ticker.textContent=combined;
     ticker.style.animation='none';
-    setTimeout(()=>ticker.style.animation='ticker 50s linear infinite',10);
+    setTimeout(()=>ticker.style.animation='ticker 60s linear infinite',10);
   }
 }
 
@@ -1094,47 +1086,10 @@ function enhancedSignal(sig, coin){
 
 async function loadData(){
   try{
-    // Parallel fetch for speed
-    const [coins, fg, fr, liq, news, whales, global] = await Promise.allSettled([
-      fetchMarket(),
-      fetchFearGreed(),
-      fetchFundingRate(),
-      fetchLiquidations(),
-      fetchNews(),
-      fetchWhaleAlerts(),
-      fetchBTCDominance(),
-    ]);
-
-    if(coins.status==='fulfilled'){
-      allCoins=coins.value;
-    }
-
-    // Update market intel
-    if(fg.status==='fulfilled' && fg.value){
-      marketIntel.fearGreed=fg.value;
-      renderFearGreed(fg.value);
-    }
-    if(fr.status==='fulfilled' && fr.value){
-      marketIntel.fundingRate=fr.value;
-      renderFundingRate(fr.value);
-    }
-    if(liq.status==='fulfilled'){
-      renderLiquidations(liq.value);
-    }
-    if(news.status==='fulfilled'){
-      marketIntel.news=news.value||[];
-      renderNews(news.value||[]);
-    }
-    if(whales.status==='fulfilled'){
-      renderWhaleAlerts(whales.value||[]);
-    }
-    if(global.status==='fulfilled' && global.value){
-      const btcD=(global.value.market_cap_percentage?.btc||0).toFixed(1);
-      const existing=document.getElementById('tbMon');
-      if(existing) existing.title=`BTC Dominance: ${btcD}%`;
-    }
-
-    allAlerts=allCoins.map(c=>({coin:c,sig:calcSignal(c)})).filter(x=>x.sig.type!=='neutral'&&x.sig.type!=='watch').sort((a,b)=>b.sig.score-a.sig.score);
+    // Step 1: Load CoinGecko FIRST (guaranteed, no CORS issues)
+    const coins = await fetchMarket();
+    allCoins = coins;
+    allAlerts = allCoins.map(c=>({coin:c,sig:calcSignal(c)})).filter(x=>x.sig.type!=='neutral'&&x.sig.type!=='watch').sort((a,b)=>b.sig.score-a.sig.score);
     updateStats();
     renderOvTable();
     renderOvAlerts();
@@ -1143,7 +1098,44 @@ async function loadData(){
     renderDiscover();
     renderCtxList();
     renderLearning();
-  }catch(e){console.error('loadData error:',e);}
+    // Use allCoins for news ticker immediately
+    renderNews([]);
+
+    // Step 2: Load secondary APIs in background (non-blocking)
+    loadSecondaryAPIs();
+  }catch(e){
+    console.error('loadData error:',e);
+  }
+}
+
+async function loadSecondaryAPIs(){
+  // Fear & Greed
+  try{
+    const fg = await fetchFearGreed();
+    if(fg){ marketIntel.fearGreed=fg; renderFearGreed(fg); }
+  }catch(e){}
+
+  // Funding Rate
+  try{
+    const fr = await fetchFundingRate();
+    if(fr){ marketIntel.fundingRate=fr; renderFundingRate(fr); }
+  }catch(e){}
+
+  // Liquidations / Open Interest
+  try{
+    const liq = await fetchLiquidations();
+    renderLiquidations(liq);
+  }catch(e){ renderLiquidations(null); }
+
+  // News
+  try{
+    const news = await fetchNews();
+    marketIntel.news = news||[];
+    renderNews(news||[]);
+  }catch(e){ renderNews([]); }
+
+  // Whales (use market data, no external API)
+  renderWhaleAlerts([]);
 }
 
 function updateStats(){
@@ -2313,13 +2305,13 @@ let cmcData = {};
 let cmcFilter = 'gainers';
 
 async function fetchCMCData() {
-  try {
-    const [market, trending] = await Promise.all([
-      fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&price_change_percentage=1h,24h,7d&sparkline=false').then(r=>r.json()),
-      fetch('https://api.coingecko.com/api/v3/search/trending').then(r=>r.json()),
-    ]);
-    return { gainers: market||[], trending: trending?.coins||[] };
-  } catch(e) { return { gainers:[], trending:[] }; }
+  // Use already-loaded allCoins + fetch trending separately
+  try{
+    const trending=await fetch('https://api.coingecko.com/api/v3/search/trending').then(r=>r.json());
+    return{gainers:allCoins.length?allCoins:[],trending:trending?.coins||[]};
+  }catch{
+    return{gainers:allCoins,trending:[]};
+  }
 }
 
 function buildCMCCard(coin, extraLabel) {
@@ -2367,27 +2359,49 @@ function buildCMCCard(coin, extraLabel) {
 
 async function loadCMC() {
   const el=document.getElementById('cmcGrid');
-  el.innerHTML='<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Cargando...</div>';
-  cmcData=await fetchCMCData();
-  renderCMC();
+  if(!el)return;
+  el.innerHTML='<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Cargando CoinMarketCap...</div>';
+  try{
+    cmcData=await fetchCMCData();
+    renderCMC();
+  }catch(e){
+    el.innerHTML='<div class="empty" style="grid-column:1/-1">Error cargando datos. <button class="btn" onclick="loadCMC()">↻ Reintentar</button></div>';
+  }
 }
 
 function renderCMC(){
-  const el=document.getElementById('cmcGrid');if(!el)return;el.innerHTML='';
-  let coins=[], label='';
+  const el=document.getElementById('cmcGrid');
+  if(!el)return;
+  el.innerHTML='';
   const gainers=[...(cmcData.gainers||[])];
-  if(cmcFilter==='gainers'){coins=gainers.sort((a,b)=>(b.price_change_percentage_24h||0)-(a.price_change_percentage_24h||0)).slice(0,18);label='🚀 GAINER';}
-  else if(cmcFilter==='losers'){coins=gainers.sort((a,b)=>(a.price_change_percentage_24h||0)-(b.price_change_percentage_24h||0)).slice(0,18);label='📉 LOSER';}
-  else if(cmcFilter==='trending'){
-    const ids=(cmcData.trending||[]).map(t=>t.item?.id);
-    coins=gainers.filter(c=>ids.includes(c.id));
-    if(!coins.length)coins=gainers.filter(c=>Math.abs(c.price_change_percentage_24h||0)>5).slice(0,18);
+  if(!gainers.length){
+    // Use allCoins if CMC data not loaded yet
+    if(allCoins.length){
+      cmcData.gainers=allCoins;
+      renderCMC();
+    }else{
+      el.innerHTML='<div class="empty" style="grid-column:1/-1">Sin datos · <button class="btn" onclick="loadCMC()">↻ Cargar</button></div>';
+    }
+    return;
+  }
+  let coins=[], label='';
+  if(cmcFilter==='gainers'){
+    coins=[...gainers].sort((a,b)=>(b.price_change_percentage_24h||0)-(a.price_change_percentage_24h||0)).slice(0,18);
+    label='🚀 GAINER';
+  }else if(cmcFilter==='losers'){
+    coins=[...gainers].sort((a,b)=>(a.price_change_percentage_24h||0)-(b.price_change_percentage_24h||0)).slice(0,18);
+    label='📉 LOSER';
+  }else if(cmcFilter==='trending'){
+    const ids=(cmcData.trending||[]).map(t=>t.item?.id).filter(Boolean);
+    coins=ids.length?gainers.filter(c=>ids.includes(c.id)):[];
+    if(!coins.length)coins=[...gainers].sort((a,b)=>Math.abs(b.price_change_percentage_24h||0)-Math.abs(a.price_change_percentage_24h||0)).slice(0,18);
     label='🔥 TRENDING';
-  } else if(cmcFilter==='new'){
-    coins=gainers.filter(c=>(c.market_cap_rank||0)>80).slice(0,18);
+  }else if(cmcFilter==='new'){
+    coins=[...gainers].filter(c=>(c.market_cap_rank||0)>50).slice(0,18);
+    if(!coins.length)coins=[...gainers].slice(50,68);
     label='🆕 NUEVO';
   }
-  if(!coins.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Sin datos</div>';return;}
+  if(!coins.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Sin datos para este filtro</div>';return;}
   coins.forEach(c=>el.appendChild(buildCMCCard(c,label)));
 }
 
@@ -2395,7 +2409,8 @@ function setCMCFilter(f,btn){
   cmcFilter=f;
   document.querySelectorAll('#cf-gainers,#cf-losers,#cf-trending,#cf-new').forEach(b=>b.className='btn');
   btn.className='btn primary';
-  renderCMC();
+  if(!cmcData.gainers||!cmcData.gainers.length) loadCMC();
+  else renderCMC();
 }
 
 // ═══════════════════════════════════
@@ -2404,19 +2419,23 @@ function setCMCFilter(f,btn){
 let birdeyeFilter='trending';
 
 async function fetchBirdeyeData(type){
-  // Try DexScreener Solana as primary (no API key needed)
   try{
-    const queries={
-      trending:'https://api.dexscreener.com/latest/dex/search?q=solana',
-      new:'https://api.dexscreener.com/token-profiles/latest/v1',
-      gainers:'https://api.dexscreener.com/latest/dex/search?q=pump',
-    };
-    const r=await fetch(queries[type]||queries.trending);
-    const d=await r.json();
-    if(d.pairs) return d.pairs.filter(p=>p.chainId==='solana').slice(0,20);
-    if(Array.isArray(d)) return d.filter(t=>t.chainId==='solana').slice(0,20);
+    if(type==='trending'||type==='gainers'){
+      // DexScreener boosted tokens on Solana
+      const r=await fetch('https://api.dexscreener.com/token-boosts/top/v1');
+      const d=await r.json();
+      const solTokens=(Array.isArray(d)?d:[]).filter(t=>t.chainId==='solana').slice(0,15);
+      if(solTokens.length) return solTokens;
+    }
+    // Fallback: latest token profiles filtered to Solana
+    const r2=await fetch('https://api.dexscreener.com/token-profiles/latest/v1');
+    const d2=await r2.json();
+    const sol=(Array.isArray(d2)?d2:[]).filter(t=>t.chainId==='solana').slice(0,20);
+    return sol;
+  }catch(e){
+    console.error('Birdeye fetch error:',e);
     return [];
-  }catch{return [];}
+  }
 }
 
 function buildBirdeyeCard(token){
@@ -2425,16 +2444,16 @@ function buildBirdeyeCard(token){
   card.onmouseenter=()=>card.style.borderColor='var(--border2)';
   card.onmouseleave=()=>card.style.borderColor='var(--border)';
 
-  // Handle both DexScreener pair format and Birdeye format
-  const name=token.baseToken?.name||token.name||'Token Solana';
-  const sym=token.baseToken?.symbol||token.symbol||'?';
-  const price=parseFloat(token.priceUsd||token.price||0);
-  const chg24=token.priceChange?.h24||token.priceChange24h||0;
-  const chg1h=token.priceChange?.h1||token.priceChange1h||0;
-  const vol=token.volume?.h24||token.volume24h||0;
-  const liq=token.liquidity?.usd||token.liquidity||0;
-  const addr=token.baseToken?.address||token.tokenAddress||token.address||'';
-  const dexUrl=token.url||`https://dexscreener.com/solana/${addr}`;
+  // Handle DexScreener pair format, boost format, and enriched data
+  const name=token._name||token.baseToken?.name||token.name||token.description||'Token Solana';
+  const sym=token._symbol||token.baseToken?.symbol||token.symbol||'SOL TOKEN';
+  const price=token._price?parseFloat(token._price):parseFloat(token.priceUsd||token.price||0);
+  const chg24=token._chg24??token.priceChange?.h24??token.priceChange24h??0;
+  const chg1h=token._chg1h??token.priceChange?.h1??token.priceChange1h??0;
+  const vol=token._vol??token.volume?.h24??token.volume24h??0;
+  const liq=token._liq??token.liquidity?.usd??token.liquidity??0;
+  const addr=token.tokenAddress||token.baseToken?.address||token.address||'';
+  const dexUrl=token._url||token.url||`https://dexscreener.com/solana/${addr}`;
 
   const vr=liq>0?(vol/liq)*100:0;
   let sigType='new',sigLabel='SOL TOKEN',sigColor='var(--blue)';
@@ -2488,11 +2507,32 @@ function buildBirdeyeCard(token){
 
 async function loadBirdeye(){
   const el=document.getElementById('birdeyeGrid');
+  if(!el)return;
   el.innerHTML='<div class="loading" style="grid-column:1/-1"><div class="ls"></div>Escaneando Solana...</div>';
-  const tokens=await fetchBirdeyeData(birdeyeFilter);
-  el.innerHTML='';
-  if(!tokens.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No hay datos de Solana. Intenta de nuevo.</div>';return;}
-  tokens.forEach(t=>el.appendChild(buildBirdeyeCard(t)));
+  try{
+    let tokens=await fetchBirdeyeData(birdeyeFilter);
+    el.innerHTML='';
+    if(!tokens.length){
+      el.innerHTML='<div class="empty" style="grid-column:1/-1">No hay tokens Solana en este momento. <button class="btn" onclick="loadBirdeye()">↻ Reintentar</button></div>';
+      return;
+    }
+    // Enrich tokens with pair data for names
+    for(const t of tokens.slice(0,12)){
+      if(t.tokenAddress && !t.baseToken){
+        try{
+          const info=await getTokenNameFromDex(t.tokenAddress,'solana');
+          if(info){
+            t._name=info.name;t._symbol=info.symbol;t._price=info.price;
+            t._chg24=info.priceChange24h;t._chg1h=info.priceChange1h;
+            t._vol=info.volume24h;t._liq=info.liquidity;t._url=info.url;
+          }
+        }catch{}
+      }
+      el.appendChild(buildBirdeyeCard(t));
+    }
+  }catch(e){
+    el.innerHTML='<div class="empty" style="grid-column:1/-1">Error: '+e.message+' <button class="btn" onclick="loadBirdeye()">↻ Reintentar</button></div>';
+  }
 }
 
 function setBirdeyeFilter(f,btn){
@@ -2514,7 +2554,13 @@ function showPage(p){
   if(pageEl) pageEl.classList.add('active');
   if(navEl) navEl.classList.add('active');
   if(p==='dex'&&!dexData.length) loadDex();
-  if(p==='cmc'&&!cmcData.gainers) loadCMC();
+  if(p==='cmc'){
+    if(!cmcData.gainers||!cmcData.gainers.length){
+      // If we already have allCoins, use them immediately
+      if(allCoins.length){ cmcData={gainers:allCoins,trending:[]}; renderCMC(); }
+      else loadCMC();
+    } else renderCMC();
+  }
   if(p==='birdeye') loadBirdeye();
 }
 
