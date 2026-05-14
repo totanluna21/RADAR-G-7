@@ -315,6 +315,59 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 .wallet-paste-btn{background:var(--red);color:#fff;border:none;border-radius:7px;padding:0 14px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
 .wallet-paste-btn:hover{background:var(--red2);}
 .wallet-security{margin-top:14px;background:rgba(0,214,138,0.06);border:1px solid rgba(0,214,138,0.15);border-radius:7px;padding:10px 12px;font-size:10px;color:rgba(0,214,138,0.8);line-height:1.6;}
+
+/* ── SWAP PANEL ── */
+.swap-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:800;display:none;align-items:center;justify-content:center;}
+.swap-overlay.open{display:flex;}
+.swap-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:420px;max-width:96vw;position:relative;overflow:hidden;}
+.swap-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.swap-header-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
+.swap-close{color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;}
+.swap-close:hover{color:var(--text);}
+.swap-token-info{padding:14px 20px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.sti-icon{width:40px;height:40px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.sti-info{flex:1;}
+.sti-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.sti-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;}
+.sti-price{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;text-align:right;}
+.sti-chg{font-family:'DM Mono',monospace;font-size:10px;text-align:right;margin-top:2px;}
+.swap-body{padding:18px 20px;}
+.swap-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
+.swap-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;transition:all .15s;color:var(--text3);}
+.swap-tab.buy.active{background:rgba(0,214,138,0.15);color:var(--green);}
+.swap-tab.sell.active{background:rgba(232,48,58,0.15);color:var(--red);}
+.swap-amount-section{margin-bottom:14px;}
+.swap-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:7px;}
+.swap-amount-box{background:var(--bg3);border:1.5px solid var(--border2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;transition:border .2s;}
+.swap-amount-box:focus-within{border-color:var(--green);}
+.swap-amount-box.sell-mode:focus-within{border-color:var(--red);}
+.swap-amount-input{background:none;border:none;color:var(--text);font-family:'Syne',sans-serif;font-size:26px;font-weight:800;flex:1;min-width:0;}
+.swap-amount-input::placeholder{color:var(--text3);}
+.swap-currency{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);flex-shrink:0;}
+.swap-presets{display:flex;gap:6px;margin-top:8px;}
+.swap-preset{background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:4px 10px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
+.swap-preset:hover{color:var(--text);border-color:var(--green);}
+.swap-estimate{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;}
+.se-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;}
+.se-row:not(:last-child){border-bottom:1px solid var(--border);}
+.se-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+.se-value{font-family:'DM Mono',monospace;font-size:10px;color:var(--text);font-weight:500;}
+.se-value.good{color:var(--green);}
+.se-value.warn{color:var(--yellow);}
+.se-value.bad{color:var(--red);}
+.swap-dex-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.swap-dex-chip{background:var(--bg3);border:1.5px solid var(--border);color:var(--text3);border-radius:6px;padding:5px 11px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
+.swap-dex-chip:hover{color:var(--text);border-color:var(--border2);}
+.swap-dex-chip.selected{border-color:var(--green);color:var(--green);background:rgba(0,214,138,0.08);}
+.swap-dex-chip.selected.sell{border-color:var(--red);color:var(--red);background:rgba(232,48,58,0.08);}
+.swap-execute-btn{width:100%;padding:14px;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer;border:none;letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.swap-execute-btn.buy{background:linear-gradient(135deg,var(--green),#00b870);color:#000;}
+.swap-execute-btn.sell{background:linear-gradient(135deg,var(--red),#c01020);color:#fff;}
+.swap-execute-btn:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed;}
+.swap-execute-btn:not(:disabled):hover{filter:brightness(1.1);transform:translateY(-1px);}
+.swap-security{margin-top:12px;display:flex;align-items:flex-start;gap:8px;font-size:10px;color:var(--text3);line-height:1.5;}
+.swap-wallet-needed{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:var(--yellow);display:flex;align-items:center;gap:8px;}
+
 </style>
 </head>
 <body>
@@ -1227,7 +1280,7 @@ function openDetail(coin,sig){
   document.getElementById('dCircle').innerHTML=`<div class="sc-circle"><svg width="78" height="78" viewBox="0 0 78 78"><circle cx="39" cy="39" r="${r}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="6"/><circle cx="39" cy="39" r="${r}" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-sig.scoreNorm/100)}" style="transition:stroke-dashoffset .8s"/></svg><div class="scv"><div class="scv-n" style="color:${c}">${sig.scoreNorm}</div><div class="scv-l">/100</div></div></div>`;
   document.getElementById('dMeta').innerHTML=`<span class="det-tag" style="background:${c}22;color:${c};border-color:${c}44">${sig.label}</span><span class="det-tag">Rank #${coin.market_cap_rank||'—'}</span><span class="det-tag">MCap ${fp(coin.market_cap)}</span><span class="det-tag" style="color:${sig.entryColor}">Entrada ${sig.enter}%</span>${sig.type==='rug'?'<span class="det-tag" style="color:#ff6b35;border-color:rgba(255,107,53,0.3)">🚨 RUG PULL RISK</span>':''}`;
   const sym=coin.symbol?.toUpperCase();
-  document.getElementById('dLinks').innerHTML=`<a class="det-lnk" href="https://t.me/s/${sym?.toLowerCase()}" target="_blank">📱 Telegram</a><a class="det-lnk" href="https://etherscan.io/search?q=${sym}" target="_blank">🔗 On Chain</a><a class="det-lnk" href="https://dexscreener.com/search?q=${sym}" target="_blank">📡 DexScreener</a><a class="det-lnk" href="https://www.coingecko.com/en/coins/${coin.id}" target="_blank">🦎 CoinGecko</a><button class="det-lnk" onclick="openTrade(currentCoin,'buy')" style="background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.3);color:var(--green)">🟢 Comprar</button><button class="det-lnk" onclick="openTrade(currentCoin,'sell')" style="background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.3);color:var(--red)">🔴 Vender</button>`;
+  document.getElementById('dLinks').innerHTML=`<a class="det-lnk" href="https://t.me/s/${sym?.toLowerCase()}" target="_blank">📱 Telegram</a><a class="det-lnk" href="https://etherscan.io/search?q=${sym}" target="_blank">🔗 On Chain</a><a class="det-lnk" href="https://dexscreener.com/search?q=${sym}" target="_blank">📡 DexScreener</a><a class="det-lnk" href="https://www.coingecko.com/en/coins/${coin.id}" target="_blank">🦎 CoinGecko</a><button class="det-lnk" onclick="openSwap('',currentCoin.symbol?.toUpperCase(),'ethereum',currentCoin.name,currentCoin.current_price,currentCoin.price_change_percentage_24h)" style="background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.3);color:var(--green)">🟢 Comprar</button><button class="det-lnk" onclick="openSwap('',currentCoin.symbol?.toUpperCase(),'ethereum',currentCoin.name,currentCoin.current_price,currentCoin.price_change_percentage_24h);setTimeout(()=>setSwapTab('sell'),100)" style="background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.3);color:var(--red)">🔴 Vender</button>`;
   addToLearning(coin,sig);
   showTab('scoring');
 }
@@ -1679,8 +1732,207 @@ function updateTradeBtn(){
   else if(amt<=0){exec.textContent='Ingresa un monto';exec.disabled=true;}
   else{exec.textContent=`${tradeTab==='buy'?'COMPRAR':'VENDER'} ${tradeCoin?.symbol?.toUpperCase()||'TOKEN'} → Abrir DEX`;exec.disabled=false;}
 }
-// ─── DEX DIRECT BUY/SELL ───
-// Maps chain → best DEX for that chain
+// ══════════════════════════════════════
+// SWAP PANEL — Compra/Venta directa
+// ══════════════════════════════════════
+let swapState = {
+  addr: '', sym: '', name: '', chain: '',
+  price: 0, chg24: 0, vol: 0, liq: 0,
+  tab: 'buy', dex: '',
+};
+
+// DEX options per chain
+const CHAIN_DEXES = {
+  solana:   [{id:'jupiter',   name:'Jupiter',      icon:'🪐', url:(a,s)=>`https://jup.ag/swap/SOL-${a||s}`, sell:(a,s)=>`https://jup.ag/swap/${a||s}-SOL`},
+             {id:'raydium',   name:'Raydium',      icon:'⚡', url:(a,s)=>`https://raydium.io/swap/?outputMint=${a||s}`, sell:(a,s)=>`https://raydium.io/swap/?inputMint=${a||s}`},
+             {id:'orca',      name:'Orca',          icon:'🐋', url:(a,s)=>`https://www.orca.so/?tokenOut=${a||s}`, sell:(a,s)=>`https://www.orca.so/?tokenIn=${a||s}`}],
+  ethereum: [{id:'uniswap',   name:'Uniswap',      icon:'🦄', url:(a,s)=>`https://app.uniswap.org/#/swap?outputCurrency=${a||s}&chain=mainnet`, sell:(a,s)=>`https://app.uniswap.org/#/swap?inputCurrency=${a||s}&chain=mainnet`},
+             {id:'1inch',     name:'1inch',          icon:'🔥', url:(a,s)=>`https://app.1inch.io/#/1/unified/swap/ETH/${a||s}`, sell:(a,s)=>`https://app.1inch.io/#/1/unified/swap/${a||s}/ETH`}],
+  bsc:      [{id:'pancake',   name:'PancakeSwap',  icon:'🥞', url:(a,s)=>`https://pancakeswap.finance/swap?outputCurrency=${a||s}&chain=bsc`, sell:(a,s)=>`https://pancakeswap.finance/swap?inputCurrency=${a||s}&chain=bsc`},
+             {id:'1inch-bsc', name:'1inch BSC',    icon:'🔥', url:(a,s)=>`https://app.1inch.io/#/56/unified/swap/BNB/${a||s}`, sell:(a,s)=>`https://app.1inch.io/#/56/unified/swap/${a||s}/BNB`}],
+  base:     [{id:'aerodrome', name:'Aerodrome',    icon:'✈️', url:(a,s)=>`https://aerodrome.finance/swap?to=${a}`, sell:(a,s)=>`https://aerodrome.finance/swap?from=${a}`},
+             {id:'uniswap-base',name:'Uniswap Base',icon:'🦄', url:(a,s)=>`https://app.uniswap.org/#/swap?outputCurrency=${a}&chain=base`, sell:(a,s)=>`https://app.uniswap.org/#/swap?inputCurrency=${a}&chain=base`}],
+  arbitrum: [{id:'uniswap-arb',name:'Uniswap Arb', icon:'🦄', url:(a,s)=>`https://app.uniswap.org/#/swap?outputCurrency=${a}&chain=arbitrum`, sell:(a,s)=>`https://app.uniswap.org/#/swap?inputCurrency=${a}&chain=arbitrum`},
+             {id:'camelot',   name:'Camelot',      icon:'⚔️', url:(a,s)=>`https://app.camelot.exchange/?token2=${a}`, sell:(a,s)=>`https://app.camelot.exchange/?token1=${a}`}],
+};
+// Default fallback
+const DEFAULT_DEXES = [{id:'uniswap', name:'Uniswap', icon:'🦄', url:(a,s)=>`https://app.uniswap.org/#/swap?outputCurrency=${a||s}`, sell:(a,s)=>`https://app.uniswap.org/#/swap?inputCurrency=${a||s}`}];
+
+function getDexesForChain(chain){
+  const c=(chain||'').toLowerCase();
+  return CHAIN_DEXES[c] || DEFAULT_DEXES;
+}
+
+function openSwap(addr, sym, chain, name, price, chg24){
+  swapState = { addr, sym, name:name||sym, chain, price:parseFloat(price)||0, chg24:parseFloat(chg24)||0, tab:'buy', dex:'' };
+  document.getElementById('swapOverlay').classList.add('open');
+  document.getElementById('swapTitle').textContent = 'Comprar ' + (sym||name||'Token');
+  document.getElementById('swapIcon').textContent = sym ? sym.slice(0,2).toUpperCase() : '🪙';
+  document.getElementById('swapTokenName').textContent = name||sym||'Token';
+  document.getElementById('swapTokenMeta').textContent = `${chain?.toUpperCase()||'—'} · ${addr?addr.slice(0,8)+'...'+addr.slice(-4):''}`;
+
+  const p = swapState.price;
+  const ps = p<0.000001?`$${p.toExponential(2)}`:p<0.01?`$${p.toFixed(6)}`:p<1?`$${p.toFixed(4)}`:`$${p.toLocaleString('en-US',{maximumFractionDigits:4})}`;
+  document.getElementById('swapTokenPrice').textContent = p ? ps : '—';
+  const chgEl = document.getElementById('swapTokenChg');
+  chgEl.textContent = chg24 ? `${chg24>=0?'+':''}${parseFloat(chg24).toFixed(2)}% 24H` : '—';
+  chgEl.style.color = chg24>=0?'var(--green)':'var(--red)';
+
+  // Build DEX chips
+  buildDexChips('buy');
+
+  // Check wallet
+  const warnEl = document.getElementById('swapWalletWarn');
+  if(warnEl) warnEl.style.display = walletState.connected ? 'none' : 'flex';
+
+  setSwapTab('buy');
+  document.getElementById('swapAmountInput').value = '';
+  updateSwapEstimate();
+}
+
+function closeSwap(){
+  document.getElementById('swapOverlay').classList.remove('open');
+  document.getElementById('swapAmountInput').value='';
+}
+
+function setSwapTab(tab){
+  swapState.tab = tab;
+  document.getElementById('swapTabBuy').classList.toggle('active', tab==='buy');
+  document.getElementById('swapTabSell').classList.toggle('active', tab==='sell');
+  document.getElementById('swapTitle').textContent = tab==='buy' ? 'Comprar '+swapState.sym : 'Vender '+swapState.sym;
+  document.getElementById('swapAmountLabel').textContent = tab==='buy' ? 'MONTO A INVERTIR (USD)' : 'CANTIDAD A VENDER';
+  document.getElementById('swapAmountBox').className = 'swap-amount-box' + (tab==='sell'?' sell-mode':'');
+  buildDexChips(tab);
+  updateSwapEstimate();
+}
+
+function buildDexChips(tab){
+  const row = document.getElementById('swapDexRow');
+  const dexes = getDexesForChain(swapState.chain);
+  row.innerHTML = '';
+  if(!swapState.dex && dexes.length) swapState.dex = dexes[0].id;
+  dexes.forEach(d => {
+    const chip = document.createElement('span');
+    chip.className = 'swap-dex-chip' + (d.id===swapState.dex?' selected'+(tab==='sell'?' sell':''):'');
+    chip.innerHTML = `${d.icon} ${d.name}`;
+    chip.onclick = () => {
+      swapState.dex = d.id;
+      buildDexChips(tab);
+      updateSwapEstimate();
+    };
+    row.appendChild(chip);
+  });
+  // Update seDex
+  const sel = dexes.find(d=>d.id===swapState.dex)||dexes[0];
+  const seDexEl = document.getElementById('seDex');
+  if(seDexEl && sel) seDexEl.textContent = `${sel.icon} ${sel.name}`;
+}
+
+function setSwapPreset(amt){
+  document.getElementById('swapAmountInput').value = amt;
+  updateSwapEstimate();
+}
+
+function updateSwapEstimate(){
+  const amt = parseFloat(document.getElementById('swapAmountInput').value)||0;
+  const p = swapState.price;
+  const tab = swapState.tab;
+
+  // Receive estimate
+  const receiveEl = document.getElementById('seReceive');
+  if(p && amt && tab==='buy'){
+    const tokens = amt/p;
+    const ts = tokens<0.000001?tokens.toExponential(3):tokens<1?tokens.toFixed(6):tokens<1000?tokens.toFixed(4):tokens.toLocaleString('en-US',{maximumFractionDigits:2});
+    receiveEl.textContent = `~${ts} ${swapState.sym}`;
+  } else if(amt && tab==='sell'){
+    const usd = amt * p;
+    receiveEl.textContent = usd ? `~$${usd.toFixed(2)} USD` : '—';
+  } else {
+    receiveEl.textContent = '—';
+  }
+
+  // Price display
+  const priceEl = document.getElementById('sePrice');
+  if(priceEl && p){
+    const ps=p<0.000001?`$${p.toExponential(2)}`:p<0.01?`$${p.toFixed(6)}`:p<1?`$${p.toFixed(4)}`:`$${p.toFixed(4)}`;
+    priceEl.textContent=ps;
+  }
+
+  // Price impact (estimate)
+  const impactEl = document.getElementById('seImpact');
+  if(impactEl){
+    if(!amt){impactEl.textContent='—';impactEl.className='se-value';}
+    else if(amt<50){impactEl.textContent='<0.1%';impactEl.className='se-value good';}
+    else if(amt<500){impactEl.textContent='~0.3%';impactEl.className='se-value good';}
+    else if(amt<2000){impactEl.textContent='~1-2%';impactEl.className='se-value warn';}
+    else{impactEl.textContent='>2% ⚠️';impactEl.className='se-value bad';}
+  }
+
+  // Fee estimate
+  const feeEl = document.getElementById('seFee');
+  if(feeEl){
+    const chain = (swapState.chain||'').toLowerCase();
+    if(chain==='solana') feeEl.textContent='~$0.001 SOL';
+    else if(chain==='bsc') feeEl.textContent='~$0.10 BNB';
+    else if(chain==='base'||chain==='arbitrum') feeEl.textContent='~$0.05-0.20';
+    else feeEl.textContent='~$2-15 ETH gas';
+  }
+
+  // Update execute button
+  const btn = document.getElementById('swapExecBtn');
+  btn.className = `swap-execute-btn ${tab}`;
+  if(!walletState.connected){
+    btn.textContent='🔗 Conectar Wallet para operar';btn.disabled=false;
+    btn.onclick=()=>{closeSwap();openWalletModal();};
+  } else if(!amt||amt<=0){
+    btn.textContent='Ingresa un monto';btn.disabled=true;
+    btn.onclick=null;
+  } else {
+    const sym = swapState.sym||'TOKEN';
+    const amtStr = `$${amt.toLocaleString('en-US',{maximumFractionDigits:2})}`;
+    btn.textContent = tab==='buy' ? `🟢 COMPRAR ${sym} por ${amtStr}` : `🔴 VENDER ${sym}`;
+    btn.disabled = false;
+    btn.onclick = executeSwap;
+  }
+}
+
+function executeSwap(){
+  const amt = parseFloat(document.getElementById('swapAmountInput').value)||0;
+  if(!amt) return;
+
+  if(!walletState.connected){ closeSwap(); openWalletModal(); return; }
+
+  const {addr, sym, chain, tab, dex} = swapState;
+  const dexes = getDexesForChain(chain);
+  const selDex = dexes.find(d=>d.id===dex) || dexes[0];
+  if(!selDex) return;
+
+  const url = tab==='buy' ? selDex.url(addr, sym) : selDex.sell(addr, sym);
+
+  // Log to learning
+  const entry = {
+    id: addr||sym, sym: sym||'TOKEN', name: swapState.name||sym,
+    signal: tab==='buy'?'COMPRA':'VENTA',
+    score: 0, price: swapState.price, c24h: swapState.chg24,
+    vr: '—', type: tab, enter: amt.toString(),
+    timestamp: new Date().toISOString(), result: 'pending',
+    action: tab==='buy'?'COMPRA':' VENTA', dex: selDex.name, amount: amt
+  };
+  learningLog.unshift(entry);
+  if(learningLog.length>50) learningLog=learningLog.slice(0,50);
+  localStorage.setItem('rg7v4', JSON.stringify(learningLog));
+
+  // Open DEX
+  window.open(url, '_blank', 'noopener,noreferrer');
+  closeSwap();
+
+  // Show confirmation
+  setTimeout(()=>{
+    addChat('bot', `✅ OPERACIÓN INICIADA\n\n📌 ${tab==='buy'?'Comprando':'Vendiendo'} ${sym} en ${selDex.name}\n💰 Monto: $${amt}\n⛓️ Chain: ${chain}\n\nEl DEX se abrió en una nueva pestaña. Confirma la transacción con tu wallet ${walletState.provider==='phantom'?'Phantom':walletState.provider==='solflare'?'Solflare':'MetaMask'}.`);
+  }, 500);
+}
+
+// ─── Maps chain → best DEX for that chain
 function getChainDex(chain, addr, sym) {
   const c = (chain||'').toLowerCase();
   if(c==='solana') {
@@ -1712,45 +1964,13 @@ function getChainDex(chain, addr, sym) {
   return `https://dexscreener.com/${chain}/${addr}`;
 }
 
-function buyDexToken(addr, sym, chain) {
-  // Warn if wallet not connected
-  if(!walletState.connected) {
-    const proceed = confirm(`⚠️ No tienes wallet conectada.\n\nAl continuar se abrirá el DEX y podrás conectar tu wallet ahí.\n\n¿Continuar?`);
-    if(!proceed) return;
-  }
-  const url = getChainDex(chain, addr, sym);
-  // Log intent to learning
-  const entry = {
-    id: addr||sym,
-    sym: sym||addr?.slice(0,8)||'DEX TOKEN',
-    name: sym||'DEX Token',
-    signal: 'COMPRA MANUAL',
-    score: 0, price: 0, c24h: 0, vr: '—',
-    type: 'buy', enter: '—',
-    timestamp: new Date().toISOString(),
-    result: 'pending', action: 'COMPRA'
-  };
-  learningLog.unshift(entry);
-  if(learningLog.length>50) learningLog=learningLog.slice(0,50);
-  localStorage.setItem('rg7v4', JSON.stringify(learningLog));
-  window.open(url, '_blank', 'noopener,noreferrer');
+function buyDexToken(addr, sym, chain, name, price, chg24){
+  openSwap(addr, sym, chain, name||sym, price||0, chg24||0);
 }
 
-function sellDexToken(addr, sym, chain) {
-  if(!walletState.connected) {
-    const proceed = confirm(`⚠️ No tienes wallet conectada.\n\nAl continuar se abrirá el DEX para vender.\n\n¿Continuar?`);
-    if(!proceed) return;
-  }
-  const c = (chain||'').toLowerCase();
-  let url;
-  if(c==='solana') {
-    // Sell: swap token → SOL
-    url = addr ? `https://jup.ag/swap/${addr}-SOL` : `https://jup.ag/swap/${sym}-SOL`;
-  } else {
-    // For EVM, open Uniswap with inputCurrency = token
-    url = addr ? `https://app.uniswap.org/#/swap?inputCurrency=${addr}` : getChainDex(chain, addr, sym);
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
+function sellDexToken(addr, sym, chain, name, price, chg24){
+  openSwap(addr, sym, chain, name||sym, price||0, chg24||0);
+  setTimeout(()=>setSwapTab('sell'), 100);
 }
 
 function executeTrade(){
@@ -1894,6 +2114,86 @@ setInterval(loadData,30000);
 
     <div class="wallet-security">
       🔒 <strong>100% Sin custodia</strong> — RADAR G-7 NUNCA pide tu clave privada ni seed phrase. Solo leemos tu dirección pública para mostrar señales. Tus fondos siempre bajo tu control.
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ SWAP PANEL ══ -->
+<div class="swap-overlay" id="swapOverlay" onclick="if(event.target===this)closeSwap()">
+  <div class="swap-panel">
+    <div class="swap-header">
+      <div class="swap-header-title" id="swapTitle">Comprar Token</div>
+      <span class="swap-close" onclick="closeSwap()">✕</span>
+    </div>
+
+    <!-- Token info bar -->
+    <div class="swap-token-info" id="swapTokenInfo">
+      <div class="sti-icon" id="swapIcon">🪙</div>
+      <div class="sti-info">
+        <div class="sti-name" id="swapTokenName">Token</div>
+        <div class="sti-meta" id="swapTokenMeta">Cargando...</div>
+      </div>
+      <div>
+        <div class="sti-price" id="swapTokenPrice">—</div>
+        <div class="sti-chg" id="swapTokenChg">—</div>
+      </div>
+    </div>
+
+    <div class="swap-body">
+
+      <!-- Wallet needed warning -->
+      <div class="swap-wallet-needed" id="swapWalletWarn" style="display:none">
+        ⚠️ Conecta tu wallet primero para ejecutar la operación.
+        <button class="btn" onclick="openWalletModal()" style="margin-left:auto;font-size:10px;padding:3px 10px;white-space:nowrap">Conectar →</button>
+      </div>
+
+      <!-- Buy / Sell tabs -->
+      <div class="swap-tabs">
+        <div class="swap-tab buy active" id="swapTabBuy" onclick="setSwapTab('buy')">🟢 COMPRAR</div>
+        <div class="swap-tab sell" id="swapTabSell" onclick="setSwapTab('sell')">🔴 VENDER</div>
+      </div>
+
+      <!-- Amount input -->
+      <div class="swap-amount-section">
+        <div class="swap-label" id="swapAmountLabel">MONTO A INVERTIR (USD)</div>
+        <div class="swap-amount-box" id="swapAmountBox">
+          <input class="swap-amount-input" id="swapAmountInput" type="number" placeholder="0.00" min="0" step="0.01" oninput="updateSwapEstimate()"/>
+          <span class="swap-currency">USD</span>
+        </div>
+        <div class="swap-presets">
+          <span class="swap-preset" onclick="setSwapPreset(10)">$10</span>
+          <span class="swap-preset" onclick="setSwapPreset(25)">$25</span>
+          <span class="swap-preset" onclick="setSwapPreset(50)">$50</span>
+          <span class="swap-preset" onclick="setSwapPreset(100)">$100</span>
+          <span class="swap-preset" onclick="setSwapPreset(250)">$250</span>
+        </div>
+      </div>
+
+      <!-- Estimate -->
+      <div class="swap-estimate" id="swapEstimate">
+        <div class="se-row"><span class="se-label">Recibirás aprox.</span><span class="se-value" id="seReceive">—</span></div>
+        <div class="se-row"><span class="se-label">Precio del token</span><span class="se-value" id="sePrice">—</span></div>
+        <div class="se-row"><span class="se-label">Precio de impacto</span><span class="se-value" id="seImpact" class="good">—</span></div>
+        <div class="se-row"><span class="se-label">Slippage máx.</span><span class="se-value" id="seSlippage">0.5%</span></div>
+        <div class="se-row"><span class="se-label">Fee red estimado</span><span class="se-value" id="seFee">—</span></div>
+        <div class="se-row"><span class="se-label">DEX seleccionado</span><span class="se-value good" id="seDex">—</span></div>
+      </div>
+
+      <!-- DEX selector -->
+      <div class="swap-label">EJECUTAR EN</div>
+      <div class="swap-dex-row" id="swapDexRow">
+        <!-- filled dynamically based on chain -->
+      </div>
+
+      <!-- Execute button -->
+      <button class="swap-execute-btn buy" id="swapExecBtn" onclick="executeSwap()">
+        Conecta tu wallet para operar
+      </button>
+
+      <div class="swap-security">
+        🔒 RADAR G-7 nunca toca tus fondos. Al confirmar, se abre el DEX oficial con el par <strong>listo para firmar</strong> con tu wallet. Tu clave privada nunca sale de tu dispositivo.
+      </div>
     </div>
   </div>
 </div>
