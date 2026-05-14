@@ -844,6 +844,65 @@ function calcSignal(coin){
   else if(scoreNorm>=50){enter=1;entryColor='var(--blue)';entryAction='👁 VIGILAR — No entrar aún';entryTiming='OBSERVAR';}
   if(rugSc>=2&&type!=='rug'){enter=Math.max(0,enter-2);entryAction+=' ⚠️';}
 
+  // ── ADVANCED INDICATORS ──
+  // RSI approximation from price changes
+  const rsiApprox = 50 + (c24h * 1.5) + (c1h * 2);
+  const rsi = Math.max(0, Math.min(100, rsiApprox));
+
+  // MACD signal: momentum divergence
+  const macdSignal = (c1h > 0 && c24h < 0) ? 'bullish_div' :
+                     (c1h < 0 && c24h > 0) ? 'bearish_div' :
+                     (c1h > 0 && c24h > 0) ? 'bullish' : 'bearish';
+
+  // Bollinger Band position (estimated)
+  const bbPos = Math.max(0, Math.min(100, 50 + c24h * 2));
+
+  // Liquidity score
+  const liquidityScore = vr > 30 ? 'high' : vr > 10 ? 'medium' : 'low';
+
+  // Futures/Perpetuals signal
+  const fr = marketIntel.fundingRate ? parseFloat(marketIntel.fundingRate.fundingRate)*100 : 0;
+  const fg = marketIntel.fearGreed ? parseInt(marketIntel.fearGreed.value) : 50;
+
+  // Perpetuals recommendation
+  let perpSignal = 'NEUTRAL', perpConfidence = 0, perpLeverage = 0;
+  if (type === 'pump' && fr < 0.05 && fg < 70 && scoreNorm >= 70) {
+    perpSignal = 'LONG'; perpConfidence = scoreNorm; perpLeverage = scoreNorm >= 85 ? 3 : 2;
+  } else if (type === 'dump' && fr > 0.05 && scoreNorm >= 65) {
+    perpSignal = 'SHORT'; perpConfidence = scoreNorm; perpLeverage = 2;
+  } else if (type === 'rug') {
+    perpSignal = 'SHORT'; perpConfidence = 90; perpLeverage = 2;
+  } else if (fr > 0.1) {
+    perpSignal = 'SHORT'; perpConfidence = 60; perpLeverage = 1;
+  } else if (fr < -0.05 && fg < 30) {
+    perpSignal = 'LONG'; perpConfidence = 65; perpLeverage = 2;
+  }
+
+  // ACTION SIGNAL — the most important output
+  let actionSignal, actionColor, actionUrgency;
+  if (type === 'rug') {
+    actionSignal = '🚨 NO ENTRAR — RUG PULL RISK';
+    actionColor = '#ff6b35'; actionUrgency = 'CRÍTICO';
+  } else if (scoreNorm >= 85 && type === 'pump') {
+    actionSignal = '✅ COMPRAR AHORA — Señal fuerte';
+    actionColor = 'var(--green)'; actionUrgency = 'INMEDIATO';
+  } else if (scoreNorm >= 85 && type === 'dump') {
+    actionSignal = '🔴 VENDER AHORA — Dump inminente';
+    actionColor = 'var(--red)'; actionUrgency = 'INMEDIATO';
+  } else if (scoreNorm >= 65 && type === 'pump') {
+    actionSignal = '⚡ PREPARAR ENTRADA — Esperar confirmación';
+    actionColor = 'var(--yellow)'; actionUrgency = 'PRONTO';
+  } else if (scoreNorm >= 65 && (type === 'dump' || type === 'alert')) {
+    actionSignal = '⚠️ PRECAUCIÓN — Posible corrección';
+    actionColor = 'var(--yellow)'; actionUrgency = 'PRONTO';
+  } else if (scoreNorm >= 50) {
+    actionSignal = '👁 VIGILAR — Sin señal clara aún';
+    actionColor = 'var(--blue)'; actionUrgency = 'ESPERAR';
+  } else {
+    actionSignal = '⚪ NO ENTRAR — Mercado neutral';
+    actionColor = 'var(--text3)'; actionUrgency = 'ESPERAR';
+  }
+
   const contributions=[
     {label:'OI Δ 24h',value:Math.min(52,Math.abs(c24h)*2.5).toFixed(0),weight:22,contrib:(Math.abs(c24h)*2.5*22/100).toFixed(1)},
     {label:'OI/MCap', value:Math.min(35,vr*1.5).toFixed(0),weight:17,contrib:(vr*1.5*17/100).toFixed(1)},
@@ -854,7 +913,17 @@ function calcSignal(coin){
     {label:'CEX Inflow',value:Math.min(35,vr).toFixed(0),weight:13,contrib:(vr*13/100).toFixed(1)},
   ];
 
-  return{score:total,scoreNorm,type,label,color,dir,vr:vr.toFixed(1),c1h,c24h,c7d,athDrop,rugSc,contributions,enter:enter.toFixed(1),entryColor,entryAction,entryTiming};
+  return{
+    score:total, scoreNorm, type, label, color, dir,
+    vr:vr.toFixed(1), c1h, c24h, c7d, athDrop, rugSc,
+    contributions,
+    enter:enter.toFixed(1), entryColor, entryAction, entryTiming,
+    // Advanced
+    rsi:rsi.toFixed(0), macdSignal, bbPos:bbPos.toFixed(0),
+    liquidityScore, perpSignal, perpConfidence, perpLeverage,
+    actionSignal, actionColor, actionUrgency,
+    fr, fg,
+  };
 }
 
 // ═══════════════════════════════
@@ -1097,7 +1166,10 @@ function buildRow(coin,sig,i){
     <span class="tt-chg ${sig.c1h>=0?'up':'dn'}">${fpc(sig.c1h)}</span>
     <span class="tt-chg ${sig.c24h>=0?'up':'dn'}">${fpc(sig.c24h)}</span>
     <span class="tt-vr ${parseFloat(sig.vr)>15?'hot':''}">${sig.vr}%</span>
-    <span class="pill ${pc}">${sig.type==='rug'?'🚨 RUG':sig.label.split(' ')[0]}</span>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span class="pill ${pc}" style="font-size:8px">${sig.type==='rug'?'🚨 RUG':sig.label.split(' ')[0]}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:8px;color:${sig.actionColor};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:95px" title="${sig.actionSignal}">${sig.actionUrgency}</span>
+    </div>
     <button class="tt-btn" onclick="event.stopPropagation();openDetail(allCoins.find(c=>c.id==='${coin.id}'),calcSignal(allCoins.find(c=>c.id==='${coin.id}')))">Ver →</button>`;
   return row;
 }
@@ -1136,7 +1208,8 @@ function renderOvAlerts(){
     const sc=sig.type==='rug'?'rug':sig.type==='pump'?'pump':sig.type==='dump'?'dump':'alert';
     item.innerHTML=`<div class="ai-sc ${sc}">${sig.scoreNorm}</div>
       <div style="flex:1"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700">${coin.symbol?.toUpperCase()} <span style="font-size:10px;color:var(--text3);font-weight:400">${coin.name}</span></div>
-      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">${sig.label} · ${fpc(sig.c24h)}</div></div>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">${sig.label} · ${fpc(sig.c24h)}</div>
+      <div style="font-size:10px;color:${sig.actionColor};font-weight:600;margin-top:2px">${sig.actionSignal.split('—')[0].trim()}</div></div>
       <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">${rndTime()}</div>`;
     el.appendChild(item);
   });
@@ -1197,7 +1270,8 @@ function renderDiscover(){
         <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)">MCap ${fp(c.market_cap)}</span>
         <span style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;border-radius:2px;background:${s.entryColor}18;border:1px solid ${s.entryColor}33;color:${s.entryColor}">Entrada ${s.enter}%</span>
       </div>
-      ${reasons.length?`<div style="font-size:10px;color:var(--text3);margin-top:6px;border-top:1px solid var(--border);padding-top:5px">⚡ ${reasons.slice(0,2).join(' · ')}</div>`:''}`;
+      ${reasons.length?`<div style="font-size:10px;color:var(--text3);margin-top:5px;border-top:1px solid var(--border);padding-top:5px">⚡ ${reasons.slice(0,2).join(' · ')}</div>`:''}
+      <div style="margin-top:6px;background:${s.actionColor}18;border:1px solid ${s.actionColor}33;border-radius:4px;padding:5px 8px;font-size:10px;color:${s.actionColor};font-weight:700">${s.actionSignal}</div>`;
     el.appendChild(card);
   });
 }
@@ -1484,6 +1558,39 @@ function renderTab(tab){
   const body=document.getElementById('detBody');body.innerHTML='';
 
   if(tab==='scoring'){
+    // ── ACTION SIGNAL BANNER ──
+    const actionBanner=document.createElement('div');
+    actionBanner.style.cssText=`background:${sig.actionColor}18;border:2px solid ${sig.actionColor}55;border-radius:10px;padding:13px 15px;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;gap:10px`;
+    actionBanner.innerHTML=`<div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:900;color:${sig.actionColor}">${sig.actionSignal}</div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px">Score ${sig.scoreNorm}/100 · RSI ~${sig.rsi} · Vol/MCap ${sig.vr}%</div></div><div style="text-align:right;flex-shrink:0"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">URGENCIA</div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:${sig.actionColor}">${sig.actionUrgency}</div></div>`;
+    body.insertBefore(actionBanner, body.firstChild);
+
+    // ── PERPS ORACLE ──
+    const perpColor=sig.perpSignal==='LONG'?'var(--green)':sig.perpSignal==='SHORT'?'var(--red)':'var(--text3)';
+    const perpBox=document.createElement('div');
+    perpBox.style.cssText='background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:11px';
+    perpBox.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:8px">🔮 ORÁCULO FUTUROS PERPETUOS</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px">
+        <div class="met-card" style="text-align:center;border-color:${perpColor}44"><div class="met-lbl">SEÑAL</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:900;color:${perpColor};margin-top:3px">${sig.perpSignal==='LONG'?'📈 LONG':sig.perpSignal==='SHORT'?'📉 SHORT':'⚪ NEUTRAL'}</div></div>
+        <div class="met-card" style="text-align:center"><div class="met-lbl">CONFIANZA</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:${perpColor};margin-top:3px">${sig.perpConfidence}%</div></div>
+        <div class="met-card" style="text-align:center"><div class="met-lbl">APALANCAM.</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-top:3px">${sig.perpLeverage>0?sig.perpLeverage+'x':'—'}</div></div>
+        <div class="met-card" style="text-align:center"><div class="met-lbl">FUNDING BTC</div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-top:3px;color:${sig.fr>0.1?'var(--red)':sig.fr<-0.05?'var(--green)':'var(--text)'}">${sig.fr!==0?(sig.fr>=0?'+':'')+sig.fr.toFixed(4)+'%':'N/A'}</div></div>
+      </div>
+      ${sig.perpSignal!=='NEUTRAL'?`<div style="background:${perpColor}12;border:1px solid ${perpColor}33;border-radius:6px;padding:8px 11px;font-size:11px;color:${perpColor};font-weight:600;margin-bottom:8px">${sig.perpSignal==='LONG'?`📈 LONG ${sig.perpLeverage}x · Stop loss -${(100/sig.perpLeverage).toFixed(0)}% · Liquidación aprox -${(100/sig.perpLeverage*1.1).toFixed(0)}%`:`📉 SHORT ${sig.perpLeverage}x · Stop loss +${(100/sig.perpLeverage).toFixed(0)}% · Liquidación aprox +${(100/sig.perpLeverage*1.1).toFixed(0)}%`}</div>`:''}
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">Exchanges perpetuos: <a href="https://www.bybit.com/trade/usdt/${coin.symbol?.toUpperCase()}USDT" target="_blank" style="color:var(--blue)">Bybit</a> · <a href="https://www.binance.com/en/futures/${coin.symbol?.toUpperCase()}USDT" target="_blank" style="color:var(--blue)">Binance</a> · <a href="https://app.dydx.exchange/trade/${coin.symbol?.toUpperCase()}-USD" target="_blank" style="color:var(--blue)">dYdX</a></div>`;
+    body.insertBefore(perpBox, body.children[1]||body.firstChild);
+
+    // ── TECHNICAL INDICATORS ──
+    const techBox2=document.createElement('div');
+    techBox2.style.cssText='background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:11px';
+    techBox2.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:8px">📊 INDICADORES TÉCNICOS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+        <div class="met-card"><div class="met-lbl">RSI (14)</div><div class="met-val" style="color:${parseFloat(sig.rsi)>70?'var(--red)':parseFloat(sig.rsi)<30?'var(--green)':'var(--text)'}">~${sig.rsi}</div><div style="font-size:9px;color:var(--text3);margin-top:2px">${parseFloat(sig.rsi)>70?'Sobrecomprado ⚠️':parseFloat(sig.rsi)<30?'Sobrevendido 🟢':'Neutral'}</div></div>
+        <div class="met-card"><div class="met-lbl">MACD</div><div class="met-val" style="font-size:12px;color:${sig.macdSignal.includes('bullish')?'var(--green)':'var(--red)'}">${sig.macdSignal==='bullish_div'?'⬆ Div.Alcista':sig.macdSignal==='bearish_div'?'⬇ Div.Bajista':sig.macdSignal==='bullish'?'▲ Alcista':'▼ Bajista'}</div></div>
+        <div class="met-card"><div class="met-lbl">BOLLINGER</div><div class="met-val" style="font-size:12px;color:${parseFloat(sig.bbPos)>80?'var(--red)':parseFloat(sig.bbPos)<20?'var(--green)':'var(--text)'}">${parseFloat(sig.bbPos)>80?'Banda alta ⚠️':parseFloat(sig.bbPos)<20?'Banda baja 🟢':'Centro'}</div><div style="height:3px;background:var(--bg4);border-radius:2px;margin-top:5px;overflow:hidden"><div style="height:100%;width:${sig.bbPos}%;background:${parseFloat(sig.bbPos)>80?'var(--red)':parseFloat(sig.bbPos)<20?'var(--green)':'var(--yellow)'}"></div></div></div>
+      </div>
+      <div style="margin-top:7px;font-size:9px;color:var(--text3)">⚠️ Estimados. Para exactos usar pestaña Gráfica → TradingView.</div>`;
+    body.insertBefore(techBox2, body.children[2]||body.firstChild);
+
     // Crit tabs
     const ct=document.createElement('div');ct.className='crit-tabs';
     ct.innerHTML=`<button class="crit-btn classic active" onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Classic · ${(sig.scoreNorm*0.8).toFixed(2)}</button><button class="crit-btn longpump" onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Long pump · ${sig.scoreNorm.toFixed(2)}</button>`;
@@ -1651,8 +1758,19 @@ REGLAS:
 async function getAI(coin,sig){
   const fg=marketIntel.fearGreed?`F&G=${marketIntel.fearGreed.value}(${marketIntel.fearGreed.value_classification})`:'';
   const fr=marketIntel.fundingRate?`FR=${(parseFloat(marketIntel.fundingRate.fundingRate)*100).toFixed(4)}%`:'';
-  const ctx=`${coin.name}($${coin.symbol?.toUpperCase()}) Rank#${coin.market_cap_rank}: P=${fpr(coin.current_price)}, 1H=${fpc(sig.c1h)}, 24H=${fpc(sig.c24h)}, 7D=${fpc(sig.c7d)}, MC=${fp(coin.market_cap)}, Vol=${fp(coin.total_volume)}, V/MC=${sig.vr}%, ATH=${fpr(coin.ath)}, dATH=${fpc(sig.athDrop)}, Score=${sig.scoreNorm}/100, Señal=${sig.label}, Entrada=${sig.enter}%, Rug=${sig.rugSc} | ${fg} ${fr}`;
-  const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,system:IA_SYSTEM,messages:[{role:'user',content:`DATOS REALES:\n${ctx}\n\n1. Diagnóstico específico\n2. ¿Similitud histórica?\n🔺 BULLISH: → [señal concreta con dato]\n🔻 BEARISH: → [señal concreta con dato]\n⚡ ACCIÓN: Entrar ${sig.enter}% si [condición] · STOP: $[precio]\nCONVICCIÓN: ${sig.scoreNorm}/100 — [veredicto]\n⚠️ No es consejo financiero.`}]})});
+  const ctx=`${coin.name}($${coin.symbol?.toUpperCase()}) Rank#${coin.market_cap_rank}
+Precio: ${fpr(coin.current_price)} | 1H: ${fpc(sig.c1h)} | 24H: ${fpc(sig.c24h)} | 7D: ${fpc(sig.c7d)}
+MCap: ${fp(coin.market_cap)} | Vol: ${fp(coin.total_volume)} | Vol/MCap: ${sig.vr}%
+ATH: ${fpr(coin.ath)} | Desde ATH: ${fpc(sig.athDrop)} | Score: ${sig.scoreNorm}/100
+SEÑAL RADAR: ${sig.label} | ACCIÓN: ${sig.actionSignal} | URGENCIA: ${sig.actionUrgency}
+TÉCNICOS: RSI~${sig.rsi} | MACD: ${sig.macdSignal} | BB: ${sig.bbPos}%
+PERPS: ${sig.perpSignal} ${sig.perpLeverage}x (${sig.perpConfidence}% confianza)
+MERCADO: Fear&Greed=${fg}/100 | Funding BTC=${sig.fr.toFixed(4)}%
+Entrada sugerida: ${sig.enter}% | Rug Score: ${sig.rugSc}/5`;
+  const price=coin.current_price||0;
+  const stopPrice=sig.dir==='up'?fpr(price*0.94):fpr(price*1.06);
+  const targetPrice=sig.dir==='up'?fpr(price*1.15):fpr(price*0.85);
+  const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:700,system:IA_SYSTEM,messages:[{role:'user',content:`DATOS REALES:\n${ctx}\n\nGenera análisis con este formato exacto:\n\n${sig.actionSignal}\n\n🎯 DIAGNÓSTICO:\n[2 líneas: qué está pasando y por qué con datos específicos]\n\n📊 TÉCNICOS:\n🔺 BULLISH → [señal RSI/MACD/volumen concreta]\n🔻 BEARISH → [señal concreta de riesgo]\n\n🔮 FUTUROS PERPETUOS:\n[Señal: ${sig.perpSignal} ${sig.perpLeverage}x · Justificación en 1 línea]\n\n⚡ PLAN DE TRADING:\nENTRADA: ${sig.enter}% capital si [condición específica]\nSTOP-LOSS: ${stopPrice} (-6%)\nTARGET 1: ${targetPrice} (+15%)\nTARGET 2: [precio +30%]\nVENDER cuando: [señal específica de salida]\n\n${sig.rugSc>=3?'🚨 RUG RISK: [patrón detectado + comparación histórica]\n':''}CONVICCIÓN: ${sig.scoreNorm}/100 — [veredicto en 1 frase]\n⚠️ No es consejo financiero. DYOR.`}]})});
   if(!res.ok)throw new Error('AI '+res.status);
   const d=await res.json();
   if(d.error)throw new Error(d.error.message);
@@ -2705,16 +2823,23 @@ function renderPortfolio() {
 }
 
 function getPositionAdvice(pos, sig, currentPrice, pnlPct) {
-  // Smart advice based on position + signal
-  if (sig.type === 'rug') return `🚨 RUG PULL RISK — Salir inmediatamente. Pérdida actual: ${pnlPct.toFixed(1)}%`;
-  if (sig.type === 'dump' && pnlPct > 0) return `⚠️ SEÑAL DE DUMP — Estás en ganancia (${pnlPct.toFixed(1)}%). Considera vender y asegurar ganancias.`;
-  if (sig.type === 'dump' && pnlPct < -10) return `🔴 DUMP + PÉRDIDA — Considera cortar pérdidas. Actual: ${pnlPct.toFixed(1)}%`;
-  if (sig.type === 'pump' && pnlPct > 30) return `🔥 PUMP FUERTE +${pnlPct.toFixed(1)}% — Evalúa tomar ganancias parciales (50%).`;
-  if (sig.type === 'pump' && pnlPct > 0) return `🟢 Señal positiva · En ganancia ${pnlPct.toFixed(1)}% · Mantener posición.`;
-  if (sig.type === 'alert') return `⚠️ Alerta activa · Score ${sig.scoreNorm}/100 · Monitorear de cerca.`;
-  if (pnlPct < -20) return `🔴 Pérdida >20% — Considera stop loss. Actual: ${pnlPct.toFixed(1)}%`;
-  if (pnlPct > 50) return `💰 Gran ganancia +${pnlPct.toFixed(1)}% — Considera asegurar al menos el 50%.`;
-  return `👁 MANTENER — Score ${sig.scoreNorm}/100 · Sin señal de salida activa.`;
+  // Use actionSignal from advanced engine
+  if (sig.actionSignal) {
+    const base = sig.actionSignal;
+    if (sig.type==='rug') return `🚨 RUG PULL RISK — SALIR AHORA. P&L: ${pnlPct.toFixed(1)}%`;
+    if (sig.actionUrgency==='INMEDIATO' && sig.type==='dump') return `🔴 ${base} — P&L actual: ${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}% — VENDER YA`;
+    if (sig.actionUrgency==='INMEDIATO' && sig.type==='pump' && pnlPct>20) return `🔥 PUMP FUERTE +${pnlPct.toFixed(1)}% — ${base} — Evalúa tomar 50% ganancias`;
+    if (pnlPct > 50) return `💰 Gran ganancia +${pnlPct.toFixed(1)}% — Asegurar al menos el 50% · ${base}`;
+    if (pnlPct < -20) return `🔴 Pérdida >20% — Evalúa cortar · ${base}`;
+    if (pnlPct > 0) return `🟢 En ganancia +${pnlPct.toFixed(1)}% · ${base}`;
+    return `${base} · P&L: ${pnlPct.toFixed(1)}%`;
+  }
+  // Fallback
+  if (sig.type==='rug') return `🚨 RUG PULL RISK — Salir inmediatamente. Pérdida: ${pnlPct.toFixed(1)}%`;
+  if (sig.type==='dump' && pnlPct>0) return `⚠️ Dump detectado · En ganancia ${pnlPct.toFixed(1)}% · Considera vender`;
+  if (pnlPct>50) return `💰 +${pnlPct.toFixed(1)}% — Asegurar ganancias`;
+  if (pnlPct<-20) return `🔴 -${Math.abs(pnlPct).toFixed(1)}% — Evalúa stop loss`;
+  return `👁 Score ${sig.scoreNorm}/100 · P&L ${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}% · Sin señal de salida`;
 }
 
 function updatePortStats() {
