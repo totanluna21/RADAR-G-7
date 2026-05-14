@@ -4,6 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RADAR G-7 — Crypto Intelligence Platform</title>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta http-equiv="X-Frame-Options" content="DENY"/>
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin"/>
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root{
@@ -642,6 +646,90 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════
+// RADAR G-7 SECURITY LAYER v1.0
+// ══════════════════════════════════════════════════════
+const SECURITY = {
+  ALLOWED_FETCH: [
+    'api.coingecko.com','api.alternative.me','fapi.binance.com',
+    'api.binance.com','api.dexscreener.com','api.whale-alert.io',
+  ],
+  ALLOWED_OPEN: [
+    'app.uniswap.org','jup.ag','pancakeswap.finance','raydium.io',
+    'aerodrome.finance','www.orca.so','app.1inch.io','app.camelot.exchange',
+    'dexscreener.com','birdeye.so','etherscan.io','solscan.io',
+    'www.coingecko.com','phantom.app','metamask.io','solflare.com',
+    'walletconnect.com','t.me','www.tradingview.com',
+  ],
+  validateFetch(url) {
+    try {
+      const u = new URL(url);
+      return this.ALLOWED_FETCH.some(d => u.hostname === d || u.hostname.endsWith('.' + d));
+    } catch { return url.startsWith('/'); }
+  },
+  validateOpen(url) {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== 'https:') return false;
+      return this.ALLOWED_OPEN.some(d => u.hostname === d || u.hostname.endsWith('.' + d));
+    } catch { return false; }
+  },
+  sanitize(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[<>'"]/g,'').replace(/javascript:/gi,'').replace(/data:/gi,'').trim().slice(0,500);
+  },
+  validateWalletAddress(addr) {
+    if (!addr || typeof addr !== 'string') return false;
+    const c = addr.trim();
+    return /^0x[a-fA-F0-9]{40}$/.test(c) || /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(c);
+  },
+  checkPhishing() {
+    const h = window.location.hostname;
+    if (!['localhost','127.0.0.1'].includes(h) && !h.endsWith('.vercel.app')) {
+      console.warn('[G7 SECURITY] Dominio no reconocido:', h);
+    }
+  },
+  log(action, detail) {
+    try {
+      const logs = JSON.parse(sessionStorage.getItem('rg7_sec') || '[]');
+      logs.push({t: Date.now(), a: action, d: String(detail).slice(0,100)});
+      if(logs.length > 50) logs.splice(0, logs.length-50);
+      sessionStorage.setItem('rg7_sec', JSON.stringify(logs));
+    } catch {}
+  }
+};
+const _origFetch = window.fetch;
+window.fetch = function(url, opts) {
+  const s = typeof url === 'string' ? url : (url && url.url) || '';
+  if (s && !s.startsWith('/') && !SECURITY.validateFetch(s)) {
+    SECURITY.log('FETCH_BLOCKED', s);
+    return Promise.reject(new Error('Security: dominio no permitido'));
+  }
+  return _origFetch.apply(this, arguments);
+};
+const _origOpen = window.open;
+window.open = function(url, target, features) {
+  const s = String(url || '');
+  if (!SECURITY.validateOpen(s)) {
+    SECURITY.log('OPEN_BLOCKED', s);
+    alert('RADAR G-7 Seguridad: URL no permitida bloqueada.');
+    return null;
+  }
+  return _origOpen.call(this, url, '_blank', 'noopener,noreferrer');
+};
+document.addEventListener('input', function(e) {
+  if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) {
+    if (/<script|javascript:|data:/i.test(e.target.value)) {
+      e.target.value = SECURITY.sanitize(e.target.value);
+    }
+  }
+});
+console.log('%c RADAR G-7 Security activa ', 'background:#00d68a;color:#000;font-weight:bold;font-size:14px;padding:4px 8px;border-radius:4px');
+console.log('%c ADVERTENCIA: Nunca pegues codigo en esta consola. Ataque Self-XSS puede robar tu wallet. ', 'background:#e8303a;color:#fff;font-weight:bold');
+SECURITY.checkPhishing();
+SECURITY.log('START', window.location.hostname);
+// ═══════════════════════════════════════════════════════
+
 // ═══════════════════════════════
 // STATE
 // ═══════════════════════════════
@@ -1661,21 +1749,21 @@ async function connectSpecific(provider){
 }
 
 function connectByAddress(){
-  const addr = document.getElementById('pasteAddrInput').value.trim();
+  const rawAddr = document.getElementById('pasteAddrInput').value.trim();
+  const addr = SECURITY.sanitize(rawAddr);
   if(!addr) { alert('Pega tu dirección primero.'); return; }
 
-  // Validate address format
-  const isEVM = /^0x[a-fA-F0-9]{40}$/.test(addr);
-  const isSolana = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
-
-  if(!isEVM && !isSolana) {
-    alert('Dirección inválida.\nEVM: empieza con 0x (42 caracteres)\nSolana: 32-44 caracteres base58');
+  if(!SECURITY.validateWalletAddress(addr)) {
+    alert('⚠️ Dirección inválida.\n\nEVM: empieza con 0x (exactamente 42 caracteres)\nSolana: 32-44 caracteres base58\n\nVerifica que copiaste la dirección correctamente.');
+    SECURITY.log('INVALID_WALLET', addr.slice(0,20));
     return;
   }
 
+  const isEVM = /^0x[a-fA-F0-9]{40}$/.test(addr);
   const provider = isEVM ? 'readonly-evm' : 'readonly-sol';
   const icon = isEVM ? '👁' : '◎';
   const name = isEVM ? 'Solo lectura (EVM)' : 'Solo lectura (SOL)';
+  SECURITY.log('WALLET_READONLY', addr.slice(0,10)+'...');
   setWallet(addr, provider, icon, name);
   closeWalletModal();
 }
@@ -1988,9 +2076,11 @@ function executeTrade(){
 // SEARCH
 // ═══════════════════════════════
 async function doSearch(){
-  const raw=document.getElementById('topSearch').value.trim();
-  if(!raw)return;
+  const rawInput=document.getElementById('topSearch').value.trim();
+  if(!rawInput)return;
   document.getElementById('topSearch').value='';
+  const raw = SECURITY.sanitize(rawInput);
+  if(!raw)return;
   const v=raw.toLowerCase();
   const isContract=/^0x[a-fA-F0-9]{20,}$/.test(raw)||raw.length>30&&/^[a-zA-Z0-9]{30,}$/.test(raw);
   if(isContract){
