@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="bg" cx="40%" cy="35%">
+      <stop offset="0%" stop-color="#2a0508"/>
+      <stop offset="100%" stop-color="#080010"/>
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="50" fill="url(#bg)"/>
+  <!-- Globe rings -->
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#e8303a" stroke-width="2.5"/>
+  <circle cx="50" cy="50" r="32" fill="none" stroke="rgba(232,48,58,0.35)" stroke-width="1.2"/>
+  <circle cx="50" cy="50" r="20" fill="none" stroke="rgba(232,48,58,0.25)" stroke-width="1"/>
+  <circle cx="50" cy="50" r="8"  fill="none" stroke="rgba(232,48,58,0.2)"  stroke-width="0.8"/>
+  <!-- Cross lines -->
+  <line x1="50" y1="6"  x2="50" y2="94" stroke="rgba(232,48,58,0.2)" stroke-width="1"/>
+  <line x1="6"  y1="50" x2="94" y2="50" stroke="rgba(232,48,58,0.2)" stroke-width="1"/>
+  <!-- Radar sweep -->
+  <polygon points="50,50 94,50 94,6 50,6" fill="rgba(232,48,58,0.1)"/>
+  <line x1="50" y1="50" x2="94" y2="50" stroke="#e8303a" stroke-width="3" stroke-linecap="round"/>
+  <!-- Center dot -->
+  <circle cx="50" cy="50" r="5" fill="#e8303a"/>
+  <!-- Signal dots -->
+  <circle cx="75" cy="25" r="4" fill="#00d68a"/>
+  <circle cx="28" cy="68" r="3.5" fill="#e8303a"/>
+  <circle cx="68" cy="72" r="3" fill="#f5a623"/>
+</svg>
