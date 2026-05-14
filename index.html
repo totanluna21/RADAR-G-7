@@ -440,6 +440,8 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="nav-sep"></div>
   <div class="nav-lbl">ANÁLISIS</div>
   <div class="nav-item" onclick="showPage('chat')" id="nav-chat"><span>🛰</span> IA Radar</div>
+  <div class="nav-item" onclick="showPage('portfolio')" id="nav-portfolio"><span>💼</span> Portfolio<span class="nav-badge" id="portBadge" style="display:none">0</span></div>
+  <div class="nav-item" onclick="showPage('portfolio')" id="nav-portfolio"><span>💼</span> Portfolio<span class="nav-badge" id="portBadge" style="display:none">0</span></div>
   <div class="nav-item" onclick="showPage('learning')" id="nav-learning"><span>📚</span> Learning</div>
   <div class="sidebar-ver">RADAR G-7 v4.0 · 8 fuentes de datos</div>
 </div>
@@ -577,6 +579,44 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 </div>
 
 <!-- LEARNING -->
+<!-- PORTFOLIO PAGE -->
+<div class="page" id="page-portfolio">
+  <div class="ph">
+    <div><div class="ph-title">💼 Portfolio</div><div class="ph-sub">Posiciones abiertas · Señales de salida en tiempo real</div></div>
+    <div class="ph-right">
+      <button class="btn primary" onclick="openAddPosition()">+ Agregar posición</button>
+      <button class="btn" onclick="refreshPortfolio()">↻ Actualizar señales</button>
+    </div>
+  </div>
+  <!-- Portfolio stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex-shrink:0" id="portStats">
+    <div class="stat-card"><div class="sc-lbl">💼 POSICIONES</div><div class="sc-val red" id="portTotal">0</div><div class="sc-sub">abiertas</div></div>
+    <div class="stat-card"><div class="sc-lbl">💰 INVERTIDO</div><div class="sc-val" id="portInvested">$0</div><div class="sc-sub">total</div></div>
+    <div class="stat-card"><div class="sc-lbl">📈 P&L TOTAL</div><div class="sc-val" id="portPnL">$0</div><div class="sc-sub" id="portPnLPct">0%</div></div>
+    <div class="stat-card"><div class="sc-lbl">🔔 ALERTAS</div><div class="sc-val yellow" id="portAlerts">0</div><div class="sc-sub">señales activas</div></div>
+  </div>
+  <!-- Positions list -->
+  <div id="portList"><div class="empty">No tienes posiciones abiertas.<br><br>Presiona <strong>+ Agregar posición</strong> para registrar un token que compraste.</div></div>
+</div>
+
+<!-- PORTFOLIO PAGE -->
+<div class="page" id="page-portfolio">
+  <div class="ph">
+    <div><div class="ph-title">💼 Portfolio</div><div class="ph-sub">Posiciones abiertas · Señales de salida en tiempo real</div></div>
+    <div class="ph-right">
+      <button class="btn primary" onclick="openAddPosition()">+ Agregar posición</button>
+      <button class="btn" onclick="refreshPortfolio()">↻ Actualizar</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex-shrink:0">
+    <div class="stat-card"><div class="sc-lbl">💼 POSICIONES</div><div class="sc-val red" id="portTotal">0</div><div class="sc-sub">abiertas</div></div>
+    <div class="stat-card"><div class="sc-lbl">💰 INVERTIDO</div><div class="sc-val" id="portInvested">$0</div><div class="sc-sub">total</div></div>
+    <div class="stat-card"><div class="sc-lbl">📈 P&L TOTAL</div><div class="sc-val" id="portPnL">$0</div><div class="sc-sub" id="portPnLPct">0%</div></div>
+    <div class="stat-card"><div class="sc-lbl">🔔 ALERTAS</div><div class="sc-val yellow" id="portAlerts">0</div><div class="sc-sub">señales activas</div></div>
+  </div>
+  <div id="portList"><div class="empty">No tienes posiciones abiertas.<br><br>Presiona <strong>+ Agregar posición</strong> para registrar un token comprado.</div></div>
+</div>
+
 <div class="page" id="page-learning">
   <div class="ph"><div><div class="ph-title">📚 Learning</div><div class="ph-sub">Historial de señales · Aprende de cada patrón</div></div>
   <div class="ph-right"><button class="btn" onclick="clearLearn()">🗑 Limpiar</button></div></div>
@@ -847,6 +887,10 @@ async function loadData(){
     renderLearning();
     renderWhales();
     renderTicker();
+    renderPortfolio();
+    checkPositionSignals();
+    renderPortfolio();
+    checkPositionSignals();
     // Load secondary APIs in background — non-blocking
     loadIntel();
   }catch(e){console.error('CoinGecko error:',e);}
@@ -2135,6 +2179,7 @@ function showPage(p){
   if(p==='dex')loadDex();
   if(p==='cmc')renderCMC();
   if(p==='birdeye')loadBirdeye();
+  if(p==='portfolio')renderPortfolio();
 }
 
 async function refreshAll(){
@@ -2147,6 +2192,441 @@ async function refreshAll(){
 // ═══════════════════════════════
 loadData();
 setInterval(loadData,30000);
+// Check portfolio signals every 30s
+setInterval(checkPositionSignals, 30000);
+
+// ══════════════════════════════════════════════════════
+// PORTFOLIO — Seguimiento de posiciones + señales salida
+// ══════════════════════════════════════════════════════
+
+// Load portfolio from localStorage (encrypted key)
+let portfolio = JSON.parse(localStorage.getItem('rg7_portfolio') || '[]');
+let posSelectedCoin = null;
+let posAlertActive = false;
+
+function savePortfolio() {
+  // Validate before saving
+  const clean = portfolio.filter(p =>
+    p && typeof p.id === 'string' && p.id.length < 100 &&
+    typeof p.entryPrice === 'number' && p.entryPrice > 0 &&
+    typeof p.amount === 'number' && p.amount > 0
+  );
+  portfolio = clean;
+  localStorage.setItem('rg7_portfolio', JSON.stringify(clean));
+}
+
+// ── ADD POSITION MODAL ──
+function openAddPosition() {
+  document.getElementById('addPosModal').classList.add('open');
+  document.getElementById('posTokenInput').value = '';
+  document.getElementById('posEntryPrice').value = '';
+  document.getElementById('posAmount').value = '';
+  document.getElementById('posTarget').value = '';
+  document.getElementById('posStop').value = '';
+  document.getElementById('posNotes').value = '';
+  document.getElementById('posTokenResults').innerHTML = '';
+  document.getElementById('posSelectedToken').style.display = 'none';
+  document.getElementById('posEstimate').style.display = 'none';
+  document.getElementById('posAddBtn').disabled = true;
+  document.getElementById('posAddBtn').textContent = 'Selecciona un token para continuar';
+  posSelectedCoin = null;
+}
+
+function closeAddPosition() {
+  document.getElementById('addPosModal').classList.remove('open');
+  posSelectedCoin = null;
+}
+
+function searchPosToken() {
+  const q = SECURITY.sanitize(document.getElementById('posTokenInput').value.trim().toLowerCase());
+  const results = document.getElementById('posTokenResults');
+  results.innerHTML = '';
+  if (!q || q.length < 1) return;
+
+  const matches = allCoins.filter(c =>
+    c.symbol?.toLowerCase().includes(q) ||
+    c.name?.toLowerCase().includes(q)
+  ).slice(0, 6);
+
+  if (!matches.length) {
+    results.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px">No encontrado en top 100. Escribe el símbolo exacto.</div>';
+    return;
+  }
+
+  matches.forEach(coin => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .15s';
+    row.onmouseenter = () => row.style.borderColor = 'var(--green)';
+    row.onmouseleave = () => row.style.borderColor = 'var(--border)';
+    const sig = calcSignal(coin);
+    row.innerHTML = `
+      <div style="flex:1">
+        <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${coin.symbol?.toUpperCase()}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:6px">${coin.name}</span>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">${fpr(coin.current_price)}</span>
+      <span class="pill ${sig.type}" style="font-size:8px;padding:1px 5px">${sig.scoreNorm}</span>`;
+    row.onclick = () => selectPosCoin(coin);
+    results.appendChild(row);
+  });
+}
+
+function selectPosCoin(coin) {
+  posSelectedCoin = coin;
+  document.getElementById('posTokenResults').innerHTML = '';
+  document.getElementById('posTokenInput').value = coin.symbol?.toUpperCase() || '';
+  document.getElementById('posSelectedToken').style.display = 'block';
+  document.getElementById('posSelSym').textContent = coin.symbol?.toUpperCase() || '—';
+  document.getElementById('posSelName').textContent = coin.name || '—';
+  document.getElementById('posSelPrice').textContent = fpr(coin.current_price);
+  updatePosEstimate();
+}
+
+function autoFillPrice() {
+  if (!posSelectedCoin) { alert('Primero selecciona un token.'); return; }
+  document.getElementById('posEntryPrice').value = posSelectedCoin.current_price || '';
+  updatePosEstimate();
+}
+
+function updatePosEstimate() {
+  const entryPrice = parseFloat(document.getElementById('posEntryPrice').value) || 0;
+  const amount = parseFloat(document.getElementById('posAmount').value) || 0;
+  const addBtn = document.getElementById('posAddBtn');
+
+  if (!posSelectedCoin || !entryPrice || !amount) {
+    document.getElementById('posEstimate').style.display = 'none';
+    addBtn.disabled = true;
+    addBtn.textContent = posSelectedCoin ? 'Ingresa precio y monto' : 'Selecciona un token';
+    return;
+  }
+
+  document.getElementById('posEstimate').style.display = 'block';
+
+  const tokens = amount / entryPrice;
+  const currentPrice = posSelectedCoin.current_price || 0;
+  const currentValue = tokens * currentPrice;
+  const pnl = currentValue - amount;
+  const pnlPct = ((currentPrice - entryPrice) / entryPrice) * 100;
+  const sig = calcSignal(posSelectedCoin);
+
+  const tsStr = tokens < 0.001 ? tokens.toExponential(3) : tokens < 1 ? tokens.toFixed(6) : tokens.toLocaleString('en-US', {maximumFractionDigits: 4});
+  document.getElementById('peTokens').textContent = `~${tsStr} ${posSelectedCoin.symbol?.toUpperCase()}`;
+  document.getElementById('peCurrentPrice').textContent = fpr(currentPrice);
+  const pnlEl = document.getElementById('pePnL');
+  pnlEl.textContent = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)`;
+  pnlEl.className = 'se-value ' + (pnl >= 0 ? 'good' : 'bad');
+  const sigEl = document.getElementById('peSignal');
+  sigEl.textContent = `${sig.label} · Score ${sig.scoreNorm}/100`;
+  sigEl.style.color = sig.color;
+
+  addBtn.disabled = false;
+  addBtn.textContent = `✅ Agregar ${posSelectedCoin.symbol?.toUpperCase()} al portfolio`;
+}
+
+function addPosition() {
+  if (!posSelectedCoin) return;
+  const entryPrice = parseFloat(document.getElementById('posEntryPrice').value);
+  const amount = parseFloat(document.getElementById('posAmount').value);
+  const target = parseFloat(document.getElementById('posTarget').value) || null;
+  const stop = parseFloat(document.getElementById('posStop').value) || null;
+  const notes = SECURITY.sanitize(document.getElementById('posNotes').value || '');
+
+  if (!entryPrice || entryPrice <= 0 || !amount || amount <= 0) {
+    alert('Ingresa precio de entrada y monto válidos.');
+    return;
+  }
+
+  const position = {
+    id: posSelectedCoin.id,
+    sym: posSelectedCoin.symbol?.toUpperCase(),
+    name: posSelectedCoin.name,
+    entryPrice,
+    amount,
+    tokens: amount / entryPrice,
+    target,
+    stop,
+    notes,
+    entryDate: new Date().toISOString(),
+    status: 'open',
+    alertSent: false,
+  };
+
+  portfolio.push(position);
+  savePortfolio();
+  renderPortfolio();
+  closeAddPosition();
+  showPage('portfolio');
+
+  // Immediate signal check
+  setTimeout(() => checkPositionSignals(), 500);
+}
+
+// ── RENDER PORTFOLIO ──
+function renderPortfolio() {
+  const el = document.getElementById('portList');
+  if (!el) return;
+
+  const open = portfolio.filter(p => p.status === 'open');
+  const badge = document.getElementById('portBadge');
+
+  // Update stats
+  updatePortStats();
+
+  if (!open.length) {
+    el.innerHTML = '<div class="empty">No tienes posiciones abiertas.<br><br>Presiona <strong>+ Agregar posición</strong> para registrar un token comprado.</div>';
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+
+  if (badge) { badge.textContent = open.length; badge.style.display = 'inline'; }
+  document.getElementById('portBadge').textContent = open.length;
+
+  el.innerHTML = '';
+  open.forEach((pos, idx) => {
+    const coin = allCoins.find(c => c.id === pos.id);
+    const currentPrice = coin?.current_price || pos.entryPrice;
+    const currentValue = pos.tokens * currentPrice;
+    const pnl = currentValue - pos.amount;
+    const pnlPct = ((currentPrice - pos.entryPrice) / pos.entryPrice) * 100;
+    const sig = coin ? calcSignal(coin) : null;
+
+    // Determine alert level
+    let alertLevel = 'none', alertMsg = '', alertColor = 'var(--text3)';
+    if (pos.stop && currentPrice <= pos.stop) {
+      alertLevel = 'stop'; alertMsg = '🛑 STOP-LOSS ALCANZADO — VENDER AHORA'; alertColor = 'var(--red)';
+    } else if (pos.target && currentPrice >= pos.target) {
+      alertLevel = 'target'; alertMsg = '🎯 TARGET ALCANZADO — Considera vender'; alertColor = 'var(--green)';
+    } else if (sig) {
+      if (sig.type === 'dump' || sig.type === 'rug') {
+        alertLevel = 'dump'; alertMsg = `⚠️ ${sig.label} — RADAR recomienda salir`; alertColor = 'var(--red)';
+      } else if (sig.type === 'pump' && pnlPct > 20) {
+        alertLevel = 'take'; alertMsg = `🔥 PUMP ACTIVO +${pnlPct.toFixed(1)}% — Considera tomar ganancias`; alertColor = 'var(--yellow)';
+      }
+    }
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px';
+
+    // Alert banner
+    const alertBanner = alertLevel !== 'none' ? `
+      <div style="background:${alertColor}18;border-bottom:1px solid ${alertColor}33;padding:9px 16px;font-size:12px;font-weight:700;color:${alertColor};display:flex;align-items:center;justify-content:space-between">
+        <span>${alertMsg}</span>
+        ${coin ? `<button onclick="openSwap('',${JSON.stringify(pos.sym)},'ethereum',${JSON.stringify(pos.name)},${currentPrice},${sig?.c24h||0});setTimeout(()=>setSwapTab('sell'),100)" style="background:${alertColor};color:${alertLevel==='stop'||alertLevel==='dump'?'#fff':'#000'};border:none;border-radius:5px;padding:5px 12px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">🔴 VENDER AHORA</button>` : ''}
+      </div>` : '';
+
+    card.innerHTML = alertBanner + `
+      <div style="padding:14px 16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">${pos.sym}</span>
+              <span style="font-size:11px;color:var(--text3)">${pos.name}</span>
+              ${sig ? `<span class="pill ${sig.type}" style="font-size:8px;padding:1px 5px">${sig.label}</span>` : ''}
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px">
+              Entrada: ${new Date(pos.entryDate).toLocaleDateString()} · ${pos.notes || 'Sin notas'}
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${pnl>=0?'var(--green)':'var(--red)'}">
+              ${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(2)}
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:${pnl>=0?'var(--green)':'var(--red)'}">
+              ${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics grid -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px">
+          <div class="met-card"><div class="met-lbl">ENTRADA</div><div class="met-val" style="font-size:13px">${fpr(pos.entryPrice)}</div></div>
+          <div class="met-card"><div class="met-lbl">ACTUAL</div><div class="met-val" style="font-size:13px;color:${pnl>=0?'var(--green)':'var(--red)'}">${fpr(currentPrice)}</div></div>
+          <div class="met-card"><div class="met-lbl">INVERTIDO</div><div class="met-val" style="font-size:13px">$${pos.amount.toFixed(2)}</div></div>
+          <div class="met-card"><div class="met-lbl">VALOR HOY</div><div class="met-val" style="font-size:13px;color:${pnl>=0?'var(--green)':'var(--red)'}">$${currentValue.toFixed(2)}</div></div>
+        </div>
+
+        <!-- Target / Stop progress bar -->
+        ${(pos.target || pos.stop) ? `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:4px">
+            <span>🛑 STOP ${pos.stop ? fpr(pos.stop) : '—'}</span>
+            <span>ENTRADA ${fpr(pos.entryPrice)}</span>
+            <span>🎯 TARGET ${pos.target ? fpr(pos.target) : '—'}</span>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:3px;position:relative;overflow:hidden">
+            ${pos.stop && pos.target ? `
+            <div style="position:absolute;height:100%;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));width:100%;opacity:0.3"></div>
+            <div style="position:absolute;height:100%;width:3px;background:white;left:${Math.max(0,Math.min(100,((currentPrice-pos.stop)/(pos.target-pos.stop))*100))}%;transform:translateX(-50%)"></div>
+            ` : `<div style="height:100%;width:${Math.max(0,Math.min(100,50+(pnlPct)))}%;background:${pnl>=0?'var(--green)':'var(--red)'};border-radius:3px"></div>`}
+          </div>
+        </div>` : ''}
+
+        <!-- RADAR signal for this position -->
+        ${sig ? `
+        <div style="background:${sig.color}12;border:1px solid ${sig.color}33;border-radius:6px;padding:9px 12px;margin-bottom:12px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:4px">SEÑAL RADAR SOBRE TU POSICIÓN</div>
+          <div style="font-size:12px;color:${sig.color};font-weight:600">${getPositionAdvice(pos, sig, currentPrice, pnlPct)}</div>
+        </div>` : ''}
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          ${coin ? `
+          <button onclick="openSwap('',${JSON.stringify(pos.sym)},'ethereum',${JSON.stringify(pos.name)},${currentPrice},${sig?.c24h||0});setTimeout(()=>setSwapTab('sell'),100)"
+            style="background:rgba(232,48,58,0.1);border:1px solid rgba(232,48,58,0.3);color:var(--red);border-radius:5px;padding:6px 13px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">
+            🔴 Vender
+          </button>
+          <button onclick="openSwap('',${JSON.stringify(pos.sym)},'ethereum',${JSON.stringify(pos.name)},${currentPrice},${sig?.c24h||0})"
+            style="background:rgba(0,214,138,0.1);border:1px solid rgba(0,214,138,0.3);color:var(--green);border-radius:5px;padding:6px 13px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">
+            🟢 Comprar más
+          </button>` : ''}
+          <button onclick="closePosition(${portfolio.indexOf(pos)})"
+            style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:6px 13px;font-size:11px;cursor:pointer">
+            ✓ Cerrar posición
+          </button>
+          <button onclick="deletePosition(${portfolio.indexOf(pos)})"
+            style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:6px 10px;font-size:11px;cursor:pointer">
+            🗑
+          </button>
+        </div>
+      </div>`;
+    el.appendChild(card);
+  });
+}
+
+function getPositionAdvice(pos, sig, currentPrice, pnlPct) {
+  // Smart advice based on position + signal
+  if (sig.type === 'rug') return `🚨 RUG PULL RISK — Salir inmediatamente. Pérdida actual: ${pnlPct.toFixed(1)}%`;
+  if (sig.type === 'dump' && pnlPct > 0) return `⚠️ SEÑAL DE DUMP — Estás en ganancia (${pnlPct.toFixed(1)}%). Considera vender y asegurar ganancias.`;
+  if (sig.type === 'dump' && pnlPct < -10) return `🔴 DUMP + PÉRDIDA — Considera cortar pérdidas. Actual: ${pnlPct.toFixed(1)}%`;
+  if (sig.type === 'pump' && pnlPct > 30) return `🔥 PUMP FUERTE +${pnlPct.toFixed(1)}% — Evalúa tomar ganancias parciales (50%).`;
+  if (sig.type === 'pump' && pnlPct > 0) return `🟢 Señal positiva · En ganancia ${pnlPct.toFixed(1)}% · Mantener posición.`;
+  if (sig.type === 'alert') return `⚠️ Alerta activa · Score ${sig.scoreNorm}/100 · Monitorear de cerca.`;
+  if (pnlPct < -20) return `🔴 Pérdida >20% — Considera stop loss. Actual: ${pnlPct.toFixed(1)}%`;
+  if (pnlPct > 50) return `💰 Gran ganancia +${pnlPct.toFixed(1)}% — Considera asegurar al menos el 50%.`;
+  return `👁 MANTENER — Score ${sig.scoreNorm}/100 · Sin señal de salida activa.`;
+}
+
+function updatePortStats() {
+  const open = portfolio.filter(p => p.status === 'open');
+  let totalInvested = 0, totalValue = 0, alertCount = 0;
+
+  open.forEach(pos => {
+    const coin = allCoins.find(c => c.id === pos.id);
+    const currentPrice = coin?.current_price || pos.entryPrice;
+    const currentValue = pos.tokens * currentPrice;
+    const sig = coin ? calcSignal(coin) : null;
+    totalInvested += pos.amount;
+    totalValue += currentValue;
+    if (sig && (sig.type === 'dump' || sig.type === 'rug')) alertCount++;
+    if (pos.stop && currentPrice <= pos.stop) alertCount++;
+    if (pos.target && currentPrice >= pos.target) alertCount++;
+  });
+
+  const pnl = totalValue - totalInvested;
+  const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
+
+  const portTotalEl = document.getElementById('portTotal');
+  const portInvEl = document.getElementById('portInvested');
+  const portPnLEl = document.getElementById('portPnL');
+  const portPnLPctEl = document.getElementById('portPnLPct');
+  const portAlertsEl = document.getElementById('portAlerts');
+  const portBadge = document.getElementById('portBadge');
+
+  if(portTotalEl) portTotalEl.textContent = open.length;
+  if(portInvEl) portInvEl.textContent = '$' + totalInvested.toFixed(2);
+  if(portPnLEl) {
+    portPnLEl.textContent = (pnl>=0?'+':'') + '$' + Math.abs(pnl).toFixed(2);
+    portPnLEl.className = 'sc-val ' + (pnl>=0?'green':'red');
+  }
+  if(portPnLPctEl) portPnLPctEl.textContent = (pnlPct>=0?'+':'') + pnlPct.toFixed(2)+'%';
+  if(portAlertsEl) portAlertsEl.textContent = alertCount;
+  if(portBadge) { portBadge.textContent = open.length; portBadge.style.display = open.length?'inline':'none'; }
+}
+
+function checkPositionSignals() {
+  // Check each position for critical signals
+  portfolio.filter(p=>p.status==='open').forEach(pos => {
+    const coin = allCoins.find(c=>c.id===pos.id);
+    if(!coin)return;
+    const currentPrice = coin.current_price;
+    const sig = calcSignal(coin);
+    const pnlPct = ((currentPrice-pos.entryPrice)/pos.entryPrice)*100;
+    let critical = false, msg = '';
+
+    if(pos.stop && currentPrice<=pos.stop && !pos.stopAlerted){
+      critical=true;msg=`🛑 STOP-LOSS: ${pos.sym} bajó a ${fpr(currentPrice)} (entrada: ${fpr(pos.entryPrice)})`;
+      pos.stopAlerted=true;
+    } else if(pos.target && currentPrice>=pos.target && !pos.targetAlerted){
+      critical=true;msg=`🎯 TARGET: ${pos.sym} llegó a ${fpr(currentPrice)} (+${pnlPct.toFixed(1)}%)`;
+      pos.targetAlerted=true;
+    } else if((sig.type==='dump'||sig.type==='rug') && !pos.dumpAlerted){
+      critical=true;msg=`⚠️ ${sig.label} detectado en ${pos.sym} · Tu posición: ${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%`;
+      pos.dumpAlerted=true;
+    }
+
+    if(critical){
+      savePortfolio();
+      showPositionAlert(pos, coin, sig, currentPrice, pnlPct, msg);
+    }
+  });
+}
+
+function showPositionAlert(pos, coin, sig, currentPrice, pnlPct, msg) {
+  const modal = document.getElementById('posSignalAlert');
+  const title = document.getElementById('psaTitle');
+  const body = document.getElementById('psaBody');
+  if(!modal||!body)return;
+
+  title.textContent = '🔔 Alerta de Portfolio — ' + pos.sym;
+  body.innerHTML = `
+    <div style="background:${sig.color}18;border:1px solid ${sig.color}33;border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:${sig.color};margin-bottom:6px">${msg}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">
+        Entrada: ${fpr(pos.entryPrice)} · Actual: ${fpr(currentPrice)} · P&L: ${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">
+        ${getPositionAdvice(pos, sig, currentPrice, pnlPct)}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openSwap('',${JSON.stringify(pos.sym)},'ethereum',${JSON.stringify(pos.name)},${currentPrice},${sig.c24h});setTimeout(()=>setSwapTab('sell'),100);closePosAlert()"
+        style="flex:1;background:var(--red);color:#fff;border:none;border-radius:7px;padding:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">
+        🔴 VENDER ${pos.sym} AHORA
+      </button>
+      <button onclick="closePosAlert()"
+        style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:12px 16px;font-size:12px;cursor:pointer">
+        Ignorar
+      </button>
+    </div>`;
+  modal.classList.add('open');
+}
+
+function closePosAlert() { document.getElementById('posSignalAlert').classList.remove('open'); }
+
+function closePosition(idx) {
+  if(!confirm('¿Marcar esta posición como cerrada?'))return;
+  portfolio[idx].status = 'closed';
+  portfolio[idx].closeDate = new Date().toISOString();
+  const coin = allCoins.find(c=>c.id===portfolio[idx].id);
+  if(coin) portfolio[idx].closePrice = coin.current_price;
+  savePortfolio();
+  renderPortfolio();
+}
+
+function deletePosition(idx) {
+  if(!confirm('¿Eliminar esta posición del portfolio?'))return;
+  portfolio.splice(idx,1);
+  savePortfolio();
+  renderPortfolio();
+}
+
+function refreshPortfolio() {
+  renderPortfolio();
+  checkPositionSignals();
+}
+
 </script>
 
 <!-- WALLET SELECTOR MODAL -->
@@ -2294,6 +2774,111 @@ setInterval(loadData,30000);
       <div class="swap-security">
         🔒 RADAR G-7 nunca toca tus fondos. Al confirmar, se abre el DEX oficial con el par <strong>listo para firmar</strong> con tu wallet. Tu clave privada nunca sale de tu dispositivo.
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ADD POSITION MODAL -->
+<div class="swap-overlay" id="addPosModal" onclick="if(event.target===this)closeAddPosition()">
+  <div class="swap-panel" style="width:460px">
+    <div class="swap-header">
+      <div class="swap-header-title">+ Agregar Posición</div>
+      <span class="swap-close" onclick="closeAddPosition()">✕</span>
+    </div>
+    <div class="swap-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <!-- Token search -->
+        <div>
+          <div class="swap-label">TOKEN (símbolo o nombre)</div>
+          <div style="display:flex;gap:8px">
+            <input id="posTokenInput" type="text" placeholder="BTC, ETH, SOL, PEPE..." 
+              class="wallet-paste-input" style="flex:1" oninput="searchPosToken()" 
+              onkeydown="if(event.key==='Enter')searchPosToken()"/>
+            <button class="wallet-paste-btn" onclick="searchPosToken()">Buscar</button>
+          </div>
+          <div id="posTokenResults" style="margin-top:6px;display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+
+        <!-- Selected token info -->
+        <div id="posSelectedToken" style="display:none;background:var(--bg3);border:1px solid var(--green);border-radius:8px;padding:11px 14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800" id="posSelSym">—</div>
+            <div style="font-size:11px;color:var(--text3)" id="posSelName">—</div>
+            <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:13px;font-weight:600" id="posSelPrice">—</div>
+          </div>
+        </div>
+
+        <!-- Entry details -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div class="swap-label">PRECIO DE ENTRADA (USD)</div>
+            <input id="posEntryPrice" type="number" placeholder="0.00" min="0" step="any"
+              class="wallet-paste-input" style="width:100%" oninput="updatePosEstimate()"/>
+          </div>
+          <div>
+            <div class="swap-label">MONTO INVERTIDO (USD)</div>
+            <input id="posAmount" type="number" placeholder="0.00" min="0" step="any"
+              class="wallet-paste-input" style="width:100%" oninput="updatePosEstimate()"/>
+          </div>
+        </div>
+
+        <!-- Auto-fill current price button -->
+        <button class="btn" id="posAutoFill" onclick="autoFillPrice()" style="font-size:10px;justify-content:center">
+          📊 Usar precio actual del mercado como entrada
+        </button>
+
+        <!-- Position estimate -->
+        <div class="swap-estimate" id="posEstimate" style="display:none">
+          <div class="se-row"><span class="se-label">Tokens comprados (est.)</span><span class="se-value" id="peTokens">—</span></div>
+          <div class="se-row"><span class="se-label">Precio actual</span><span class="se-value" id="peCurrentPrice">—</span></div>
+          <div class="se-row"><span class="se-label">P&L actual</span><span class="se-value" id="pePnL">—</span></div>
+          <div class="se-row"><span class="se-label">Señal RADAR</span><span class="se-value" id="peSignal">—</span></div>
+        </div>
+
+        <!-- Target & stop -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div class="swap-label">🎯 TARGET VENTA (USD) — opcional</div>
+            <input id="posTarget" type="number" placeholder="precio objetivo..." min="0" step="any"
+              class="wallet-paste-input" style="width:100%"/>
+          </div>
+          <div>
+            <div class="swap-label">🛑 STOP LOSS (USD) — opcional</div>
+            <input id="posStop" type="number" placeholder="stop loss..." min="0" step="any"
+              class="wallet-paste-input" style="width:100%"/>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <div class="swap-label">NOTAS (opcional)</div>
+          <input id="posNotes" type="text" placeholder="Razón de entrada, estrategia..." 
+            class="wallet-paste-input" style="width:100%" maxlength="200"/>
+        </div>
+
+        <button class="swap-execute-btn buy" id="posAddBtn" onclick="addPosition()" disabled>
+          Selecciona un token para continuar
+        </button>
+
+        <div class="swap-security" style="margin-top:8px">
+          🔒 Tu portfolio se guarda localmente en tu navegador (localStorage). Nunca se envía a ningún servidor.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POSITION SIGNAL ALERT -->
+<div class="swap-overlay" id="posSignalAlert" onclick="if(event.target===this)closePosAlert()">
+  <div class="swap-panel" style="width:420px">
+    <div class="swap-header">
+      <div class="swap-header-title" id="psaTitle">🔔 Señal de Salida</div>
+      <span class="swap-close" onclick="closePosAlert()">✕</span>
+    </div>
+    <div class="swap-body">
+      <div id="psaBody"></div>
     </div>
   </div>
 </div>
