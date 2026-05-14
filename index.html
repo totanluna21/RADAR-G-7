@@ -2045,33 +2045,134 @@ function executeSwap(){
   if(!walletState.connected){ closeSwap(); openWalletModal(); return; }
 
   const {addr, sym, chain, tab, dex} = swapState;
+  const price = swapState.price || 0;
   const dexes = getDexesForChain(chain);
   const selDex = dexes.find(d=>d.id===dex) || dexes[0];
   if(!selDex) return;
 
   const url = tab==='buy' ? selDex.url(addr, sym) : selDex.sell(addr, sym);
 
+  // Open DEX first
+  window.open(url, '_blank', 'noopener,noreferrer');
+  closeSwap();
+
   // Log to learning
   const entry = {
     id: addr||sym, sym: sym||'TOKEN', name: swapState.name||sym,
     signal: tab==='buy'?'COMPRA':'VENTA',
-    score: 0, price: swapState.price, c24h: swapState.chg24,
+    score: 0, price, c24h: swapState.chg24,
     vr: '—', type: tab, enter: amt.toString(),
     timestamp: new Date().toISOString(), result: 'pending',
-    action: tab==='buy'?'COMPRA':' VENTA', dex: selDex.name, amount: amt
+    action: tab==='buy'?'COMPRA':'VENTA', dex: selDex.name, amount: amt
   };
   learningLog.unshift(entry);
   if(learningLog.length>50) learningLog=learningLog.slice(0,50);
   localStorage.setItem('rg7v4', JSON.stringify(learningLog));
 
-  // Open DEX
-  window.open(url, '_blank', 'noopener,noreferrer');
-  closeSwap();
+  if(tab === 'buy') {
+    // After buying, offer to add to portfolio
+    showPostBuyModal({addr, sym, name:swapState.name||sym, chain, price, amount:amt, dex:selDex.name});
+  } else {
+    // Selling — offer to close portfolio position
+    const pos = portfolio.find(p=>p.sym===sym&&p.status==='open');
+    if(pos) {
+      setTimeout(()=>{
+        if(confirm(`¿Cerrar posición de ${sym} en tu portfolio?`)) {
+          const idx = portfolio.indexOf(pos);
+          closePosition(idx);
+        }
+      }, 1500);
+    }
+  }
+}
 
-  // Show confirmation
-  setTimeout(()=>{
-    addChat('bot', `✅ OPERACIÓN INICIADA\n\n📌 ${tab==='buy'?'Comprando':'Vendiendo'} ${sym} en ${selDex.name}\n💰 Monto: $${amt}\n⛓️ Chain: ${chain}\n\nEl DEX se abrió en una nueva pestaña. Confirma la transacción con tu wallet ${walletState.provider==='phantom'?'Phantom':walletState.provider==='solflare'?'Solflare':'MetaMask'}.`);
-  }, 500);
+// ── POST-BUY MODAL — confirm purchase and add to portfolio ──
+let pendingBuy = null;
+
+function showPostBuyModal(buyData) {
+  pendingBuy = buyData;
+  // Create a quick confirm panel
+  const modal = document.createElement('div');
+  modal.id = 'postBuyModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:900;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid rgba(0,214,138,0.4);border-radius:14px;width:400px;max-width:95vw;padding:22px;position:relative">
+      <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--green);margin-bottom:4px">✅ Compra iniciada en el DEX</div>
+      <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:18px">Confirma la transacción en tu wallet · ${buyData.dex}</div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">TOKEN</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800">${buyData.sym}</div></div>
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">MONTO</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800">$${parseFloat(buyData.amount).toFixed(2)}</div></div>
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">PRECIO ENTRADA</div><div style="font-family:'DM Mono',monospace;font-size:12px">${buyData.price?fpr(buyData.price):'Confirmar en DEX'}</div></div>
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">CHAIN</div><div style="font-family:'DM Mono',monospace;font-size:12px">${buyData.chain?.toUpperCase()}</div></div>
+        </div>
+      </div>
+
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--yellow);background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:6px;padding:9px 12px;margin-bottom:16px">
+        💡 ¿Quieres que RADAR G-7 monitoree esta posición y te avise cuándo vender?
+      </div>
+
+      <!-- Entry price input if not available -->
+      ${!buyData.price ? `
+      <div style="margin-bottom:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:5px">PRECIO DE COMPRA (pégalo del DEX)</div>
+        <input id="postBuyPrice" type="number" placeholder="0.00000000" min="0" step="any"
+          style="width:100%;background:var(--bg3);border:1.5px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:9px 12px;border-radius:7px"/>
+      </div>` : ''}
+
+      <div style="display:flex;gap:8px">
+        <button onclick="confirmAddToPortfolio()" style="flex:1;background:var(--green);color:#000;border:none;border-radius:8px;padding:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">
+          📊 Agregar al Portfolio
+        </button>
+        <button onclick="document.getElementById('postBuyModal').remove();pendingBuy=null" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:12px 14px;font-size:12px;cursor:pointer">
+          No ahora
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function confirmAddToPortfolio() {
+  if(!pendingBuy) return;
+  const priceInput = document.getElementById('postBuyPrice');
+  const entryPrice = pendingBuy.price || parseFloat(priceInput?.value) || 0;
+
+  if(!entryPrice) {
+    alert('Ingresa el precio de compra del DEX.');
+    return;
+  }
+
+  const position = {
+    id: pendingBuy.addr || pendingBuy.sym,
+    sym: SECURITY.sanitize(pendingBuy.sym || 'TOKEN'),
+    name: SECURITY.sanitize(pendingBuy.name || pendingBuy.sym || 'Token DEX'),
+    entryPrice,
+    amount: pendingBuy.amount,
+    tokens: pendingBuy.amount / entryPrice,
+    target: null,
+    stop: null,
+    notes: `Comprado via ${pendingBuy.dex} · Chain: ${pendingBuy.chain}`,
+    entryDate: new Date().toISOString(),
+    status: 'open',
+    alertSent: false,
+    addr: SECURITY.sanitize(pendingBuy.addr || ''),
+    chain: pendingBuy.chain || 'unknown',
+    isDex: true,
+  };
+
+  portfolio.push(position);
+  savePortfolio();
+  renderPortfolio();
+
+  document.getElementById('postBuyModal').remove();
+  pendingBuy = null;
+
+  // Navigate to portfolio
+  showPage('portfolio');
+
+  // Immediate signal check
+  setTimeout(() => checkPositionSignals(), 500);
 }
 
 // ─── Maps chain → best DEX for that chain
@@ -2237,19 +2338,83 @@ function closeAddPosition() {
   posSelectedCoin = null;
 }
 
-function searchPosToken() {
-  const q = SECURITY.sanitize(document.getElementById('posTokenInput').value.trim().toLowerCase());
+async function searchPosToken() {
+  const raw = document.getElementById('posTokenInput').value.trim();
+  const q = SECURITY.sanitize(raw).toLowerCase();
   const results = document.getElementById('posTokenResults');
   results.innerHTML = '';
   if (!q || q.length < 1) return;
 
+  // Check if it's a contract address (Solana or EVM)
+  const isContract = /^0x[a-fA-F0-9]{20,}$/.test(raw) || /^[1-9A-HJ-NP-Za-km-z]{32,}$/.test(raw);
+
+  if (isContract) {
+    results.innerHTML = '<div style="font-size:11px;color:var(--yellow);padding:6px">🔍 Buscando contrato en DexScreener...</div>';
+    try {
+      const r = await fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${raw}`, 6000);
+      const d = await r.json();
+      const pair = d.pairs?.[0];
+      if (pair) {
+        results.innerHTML = '';
+        const name = pair.baseToken?.name || 'Token';
+        const sym = pair.baseToken?.symbol || '?';
+        const price = parseFloat(pair.priceUsd || 0);
+        const chg = pair.priceChange?.h24 || 0;
+        const chain = pair.chainId || 'unknown';
+
+        // Create a fake "coin" object for this DEX token
+        const dexCoin = {
+          id: raw,
+          symbol: sym,
+          name: name,
+          current_price: price,
+          price_change_percentage_24h: chg,
+          price_change_percentage_1h_in_currency: pair.priceChange?.h1 || 0,
+          price_change_percentage_7d_in_currency: 0,
+          total_volume: pair.volume?.h24 || 0,
+          market_cap: pair.fdv || 0,
+          high_24h: price * 1.1,
+          low_24h: price * 0.9,
+          ath: price * 2,
+          _isDex: true,
+          _addr: raw,
+          _chain: chain,
+          _dexUrl: pair.url || '',
+          _dexId: pair.dexId || '',
+        };
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid rgba(0,214,138,0.4);border-radius:6px;cursor:pointer';
+        row.innerHTML = `
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${sym}</span>
+              <span style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(153,102,255,0.15);color:#9966ff">${chain.toUpperCase()}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:1px">${name}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">${raw.slice(0,12)}...${raw.slice(-6)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'DM Mono',monospace;font-size:12px">${fpr(price)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
+          </div>`;
+        row.onclick = () => selectPosCoin(dexCoin);
+        results.appendChild(row);
+        return;
+      }
+    } catch(e) {}
+    results.innerHTML = '<div style="font-size:11px;color:var(--red);padding:6px">No encontrado en DexScreener. Verifica el contrato.</div>';
+    return;
+  }
+
+  // Normal search in allCoins
   const matches = allCoins.filter(c =>
     c.symbol?.toLowerCase().includes(q) ||
     c.name?.toLowerCase().includes(q)
   ).slice(0, 6);
 
   if (!matches.length) {
-    results.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px">No encontrado en top 100. Escribe el símbolo exacto.</div>';
+    results.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px">No encontrado. Prueba con el contrato del token.</div>';
     return;
   }
 
@@ -2337,18 +2502,21 @@ function addPosition() {
   }
 
   const position = {
-    id: posSelectedCoin.id,
-    sym: posSelectedCoin.symbol?.toUpperCase(),
-    name: posSelectedCoin.name,
+    id: posSelectedCoin._isDex ? posSelectedCoin._addr : posSelectedCoin.id,
+    sym: SECURITY.sanitize(posSelectedCoin.symbol?.toUpperCase() || 'TOKEN'),
+    name: SECURITY.sanitize(posSelectedCoin.name || posSelectedCoin.symbol || 'Token'),
     entryPrice,
     amount,
     tokens: amount / entryPrice,
     target,
     stop,
-    notes,
+    notes: SECURITY.sanitize(notes),
     entryDate: new Date().toISOString(),
     status: 'open',
     alertSent: false,
+    isDex: posSelectedCoin._isDex || false,
+    addr: posSelectedCoin._addr || '',
+    chain: posSelectedCoin._chain || 'ethereum',
   };
 
   portfolio.push(position);
@@ -2384,7 +2552,8 @@ function renderPortfolio() {
   el.innerHTML = '';
   open.forEach((pos, idx) => {
     const coin = allCoins.find(c => c.id === pos.id);
-    const currentPrice = coin?.current_price || pos.entryPrice;
+    // For DEX tokens, use cached price or entry price
+    const currentPrice = coin?.current_price || pos.currentPrice || pos.entryPrice;
     const currentValue = pos.tokens * currentPrice;
     const pnl = currentValue - pos.amount;
     const pnlPct = ((currentPrice - pos.entryPrice) / pos.entryPrice) * 100;
@@ -2512,7 +2681,8 @@ function updatePortStats() {
 
   open.forEach(pos => {
     const coin = allCoins.find(c => c.id === pos.id);
-    const currentPrice = coin?.current_price || pos.entryPrice;
+    // For DEX tokens, use cached price or entry price
+    const currentPrice = coin?.current_price || pos.currentPrice || pos.entryPrice;
     const currentValue = pos.tokens * currentPrice;
     const sig = coin ? calcSignal(coin) : null;
     totalInvested += pos.amount;
@@ -2622,7 +2792,20 @@ function deletePosition(idx) {
   renderPortfolio();
 }
 
-function refreshPortfolio() {
+async function refreshPortfolio() {
+  // Update prices for DEX tokens from DexScreener
+  for(const pos of portfolio.filter(p=>p.status==='open'&&p.isDex&&p.addr)){
+    try{
+      const r = await fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${pos.addr}`, 5000);
+      const d = await r.json();
+      const pair = d.pairs?.[0];
+      if(pair?.priceUsd){
+        pos.currentPrice = parseFloat(pair.priceUsd);
+        pos.currentChg = pair.priceChange?.h24 || 0;
+      }
+    }catch{}
+  }
+  savePortfolio();
   renderPortfolio();
   checkPositionSignals();
 }
