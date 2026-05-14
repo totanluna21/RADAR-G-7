@@ -735,9 +735,15 @@ const SECURITY = {
   },
   checkPhishing() {
     const h = window.location.hostname;
-    if (!['localhost','127.0.0.1'].includes(h) && !h.endsWith('.vercel.app')) {
+    const ok = ['localhost','127.0.0.1'].includes(h) ||
+      h.endsWith('.vercel.app') ||
+      h.endsWith('.vercel.sh') ||
+      h.endsWith('.now.sh') ||
+      h === 'radar-g-7.vercel.app';
+    if (!ok) {
       console.warn('[G7 SECURITY] Dominio no reconocido:', h);
     }
+    // If running on claude.ai artifact preview, that is also fine
   },
   log(action, detail) {
     try {
@@ -862,13 +868,12 @@ function calcSignal(coin){
 // DATA LOADING — CoinGecko ONLY (guaranteed to work)
 // ═══════════════════════════════
 async function fetchWithTimeout(url, ms=6000){
-  const ctrl=new AbortController();
-  const tid=setTimeout(()=>ctrl.abort(),ms);
-  try{
-    const r=await fetch(url,{signal:ctrl.signal});
-    clearTimeout(tid);
-    return r;
-  }catch(e){clearTimeout(tid);throw e;}
+  // Use Promise.race instead of AbortController to avoid DataCloneError
+  const fetchPromise = fetch(url);
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout: ' + url)), ms)
+  );
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 async function loadData(){
