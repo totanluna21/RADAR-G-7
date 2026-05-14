@@ -382,6 +382,29 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 .swap-security{margin-top:12px;display:flex;align-items:flex-start;gap:8px;font-size:10px;color:var(--text3);line-height:1.5;}
 .swap-wallet-needed{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:var(--yellow);display:flex;align-items:center;gap:8px;}
 
+
+/* ── DEEP ANALYSIS PANEL ── */
+.deep-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:850;display:none;align-items:center;justify-content:center;}
+.deep-overlay.open{display:flex;}
+.deep-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:520px;max-width:96vw;max-height:90vh;overflow-y:auto;position:relative;}
+.deep-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:10;}
+.deep-close{color:var(--text3);font-size:20px;cursor:pointer;padding:4px;}
+.deep-close:hover{color:var(--text);}
+.deep-body{padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
+.deep-section{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+.deep-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:8px;}
+.goplus-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);}
+.goplus-row:last-child{border-bottom:none;}
+.goplus-key{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);}
+.goplus-val{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;}
+.goplus-val.safe{color:var(--green);}
+.goplus-val.warn{color:var(--yellow);}
+.goplus-val.danger{color:var(--red);}
+.risk-bar{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-top:6px;}
+.risk-fill{height:100%;border-radius:4px;transition:width .8s;}
+.ai-deep-block{font-size:12px;color:var(--text2);line-height:1.8;min-height:80px;}
+.ai-deep-block p{margin-bottom:6px;}
+
 </style>
 </head>
 <body>
@@ -708,6 +731,7 @@ const SECURITY = {
   ALLOWED_FETCH: [
     'api.coingecko.com','api.alternative.me','fapi.binance.com',
     'api.binance.com','api.dexscreener.com','api.whale-alert.io',
+    'api.gopluslabs.io',
   ],
   ALLOWED_OPEN: [
     'app.uniswap.org','jup.ag','pancakeswap.finance','raydium.io',
@@ -1530,10 +1554,10 @@ function buildDexCard(t){
     +'</div>'
     // Buttons
     +(addr
-      ? '<div style="margin-top:8px;display:flex;gap:5px">'
-        +'<a href="https://dexscreener.com/'+chain+'/'+addr+'" target="_blank" class="btn" style="font-size:9px;padding:3px 7px">&#x1F4E1; Info</a>'
-        +'<button class="btn dex-buy-btn" style="font-size:9px;padding:3px 7px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">&#x1F7E2; Comprar</button>'
-        +'<button class="btn dex-sell-btn" style="font-size:9px;padding:3px 7px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">&#x1F534; Vender</button>'
+      ? '<div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">'
+        +'<button class="btn dex-analyze-btn" style="font-size:9px;padding:3px 9px;background:rgba(61,142,245,0.12);border-color:rgba(61,142,245,0.3);color:var(--blue);font-weight:700">🔍 Analizar</button>'
+        +'<button class="btn dex-buy-btn" style="font-size:9px;padding:3px 9px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">&#x1F7E2; Comprar</button>'
+        +'<button class="btn dex-sell-btn" style="font-size:9px;padding:3px 9px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">&#x1F534; Vender</button>'
         +'</div>'
       : '');
   // Set onclick via DOM to avoid quote escaping issues
@@ -1543,12 +1567,15 @@ function buildDexCard(t){
     if(buyB) buyB.onclick = () => buyDexToken(addr, '', chain);
     if(sellB) sellB.onclick = () => sellDexToken(addr, '', chain);
   }
-  // Set onclick via DOM
+  // Set onclick via DOM — no inline quote issues
   if(addr){
-    const buyB = card.querySelector('.dex-buy-btn');
+    const _a=addr, _c=chain;
+    const buyB  = card.querySelector('.dex-buy-btn');
     const sellB = card.querySelector('.dex-sell-btn');
-    if(buyB){ const _a=addr,_c=chain; buyB.onclick=()=>buyDexToken(_a,'',_c); }
-    if(sellB){ const _a=addr,_c=chain; sellB.onclick=()=>sellDexToken(_a,'',_c); }
+    const anaB  = card.querySelector('.dex-analyze-btn');
+    if(buyB)  buyB.onclick  = () => buyDexToken(_a, '', _c);
+    if(sellB) sellB.onclick = () => sellDexToken(_a, '', _c);
+    if(anaB)  anaB.onclick  = () => openDeep(_a, '', '', _c, 0, 0, 0, 0);
   }
   return card;
 }
@@ -1613,6 +1640,13 @@ async function enrichDexCard(card,t){
     const volEl=card.querySelector('.dex-vol-el');
     if(liqEl) liqEl.textContent='Liq: '+fp(liq);
     if(volEl) volEl.textContent='Vol: '+fp(vol);
+    // Update analyze button with real data
+    const anaBtn = card.querySelector('.dex-analyze-btn');
+    if(anaBtn && t.tokenAddress) {
+      const _a=t.tokenAddress, _s=sym, _n=name, _c=t.chainId||card.dataset.chain||'ethereum';
+      const _p=price, _h=chg, _l=liq, _v=vol;
+      anaBtn.onclick = () => openDeep(_a, _s, _n, _c, _p, _h, _l, _v);
+    }
   }catch(e){console.warn('Enrich error:',e.message);}
 }
 
@@ -1694,6 +1728,279 @@ async function scanBestDex() {
 
 // Auto-scan on load DEX
 const _origLoadDex = loadDex;
+
+
+// ══════════════════════════════════════════════════════════
+// DEEP ANALYSIS — GoPlus Security + RADAR G-7 IA
+// ══════════════════════════════════════════════════════════
+
+let deepToken = null; // current token being analyzed
+
+function openDeep(addr, sym, name, chain, price, chg, liq, vol) {
+  // Security validation
+  addr = SECURITY.sanitize(addr || '');
+  sym  = SECURITY.sanitize(sym  || '');
+  name = SECURITY.sanitize(name || sym || 'Token');
+  chain = SECURITY.sanitize(chain || 'ethereum');
+
+  deepToken = { addr, sym, name, chain,
+    price: parseFloat(price)||0,
+    chg: parseFloat(chg)||0,
+    liq: parseFloat(liq)||0,
+    vol: parseFloat(vol)||0
+  };
+
+  // Open modal
+  document.getElementById('deepOverlay').classList.add('open');
+  document.getElementById('deepTitle').textContent = sym || name || 'Análisis Profundo';
+  document.getElementById('deepSubtitle').textContent = chain.toUpperCase() + ' · ' + (addr ? addr.slice(0,10)+'...' : 'Token DEX');
+
+  // Fill basic metrics
+  const p = deepToken.price;
+  const ps = p<0.000001 ? '$'+p.toExponential(2) : p<0.01 ? '$'+p.toFixed(6) : p<1 ? '$'+p.toFixed(4) : '$'+p.toFixed(2);
+  document.getElementById('deepPrice').textContent = p ? ps : '—';
+  const chgEl = document.getElementById('deepChg');
+  chgEl.textContent = chg ? (chg>=0?'+':'')+parseFloat(chg).toFixed(2)+'%' : '—';
+  chgEl.style.color = chg>=0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('deepLiq').textContent = liq ? fp(parseFloat(liq)) : '—';
+
+  // Calculate RADAR signal
+  const dexSig = calcDexTokenSignal(0, parseFloat(chg)||0, parseFloat(liq)||0, parseFloat(vol)||0, chain);
+  const sigBox = document.getElementById('deepSignalBox');
+  const sigEl  = document.getElementById('deepSignal');
+  const sigDet = document.getElementById('deepSignalDetail');
+  sigBox.style.background = dexSig.actionColor + '18';
+  sigBox.style.borderColor = dexSig.actionColor + '44';
+  sigEl.textContent = dexSig.actionSignal;
+  sigEl.style.color = dexSig.actionColor;
+  sigDet.textContent = 'Score: ' + dexSig.scoreNorm + '/100 · Urgencia: ' + dexSig.actionUrgency
+    + (dexSig.exitSignal ? ' · ' + dexSig.exitSignal : '');
+
+  // Reset GoPlus and AI sections
+  document.getElementById('deepRiskScore').textContent = 'Analizando...';
+  document.getElementById('deepRiskFill').style.width = '50%';
+  document.getElementById('deepRiskFill').style.background = 'var(--yellow)';
+  document.getElementById('deepGoPlusData').innerHTML = '<div class="loading"><div class="ls"></div>Consultando GoPlus Security...</div>';
+  document.getElementById('deepAI').innerHTML = '<div class="ai-loading"><div class="ai-spin"></div><span style="font-size:10px;color:var(--text3)">Esperando datos de seguridad...</span></div>';
+
+  // Load GoPlus then AI
+  if(addr) {
+    loadGoPlusData(addr, chain, dexSig).then(goplusResult => {
+      loadDeepAI(dexSig, goplusResult);
+    });
+  } else {
+    document.getElementById('deepGoPlusData').innerHTML = '<div style="font-size:11px;color:var(--text3)">Sin contrato — análisis de seguridad no disponible.</div>';
+    loadDeepAI(dexSig, null);
+  }
+}
+
+function closeDeep() {
+  document.getElementById('deepOverlay').classList.remove('open');
+  deepToken = null;
+}
+
+// ── GoPlus Security API ──
+async function loadGoPlusData(addr, chain, dexSig) {
+  const gpChainMap = {
+    ethereum:'1', eth:'1', bsc:'56', polygon:'137', arbitrum:'42161',
+    base:'8453', optimism:'10', avalanche:'43114', solana:'solana',
+  };
+  const chainId = gpChainMap[(chain||'').toLowerCase()] || '1';
+
+  let goplusResult = null;
+
+  try {
+    // GoPlus Security API — 100% free, no API key needed
+    const gpUrl = chainId === 'solana'
+      ? 'https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=' + addr
+      : 'https://api.gopluslabs.io/api/v1/token_security/' + chainId + '?contract_addresses=' + addr;
+
+    const r = await fetchWithTimeout(gpUrl, 8000);
+    if (!r.ok) throw new Error('GoPlus HTTP ' + r.status);
+    const d = await r.json();
+    const tokenData = d.result && d.result[addr.toLowerCase()] || d.result && d.result[addr] || null;
+
+    if (!tokenData) throw new Error('Sin datos de GoPlus');
+
+    goplusResult = tokenData;
+
+    // Calculate risk score 0-100
+    let riskScore = 0;
+    const checks = [
+      { key: 'is_honeypot',        label: 'Honeypot',             danger: '1', weight: 40 },
+      { key: 'is_blacklisted',     label: 'Blacklisted',          danger: '1', weight: 20 },
+      { key: 'is_mintable',        label: 'Mintable',             danger: '1', weight: 15 },
+      { key: 'is_proxy',           label: 'Proxy contract',       danger: '1', weight: 10 },
+      { key: 'can_take_back_ownership', label: 'Puede tomar ownership', danger: '1', weight: 20 },
+      { key: 'hidden_owner',       label: 'Owner oculto',         danger: '1', weight: 15 },
+      { key: 'selfdestruct',       label: 'Self-destruct',        danger: '1', weight: 15 },
+      { key: 'is_anti_whale',      label: 'Anti-whale',           danger: '0', weight: -5 },
+      { key: 'is_open_source',     label: 'Open source',          danger: '0', weight: -10 },
+    ];
+
+    let rows = '';
+    checks.forEach(c => {
+      const val = tokenData[c.key];
+      if(val === undefined) return;
+      const isDanger = val === c.danger || val === true || val === 1;
+      if(isDanger) riskScore += c.weight;
+      const cls = isDanger && c.weight > 0 ? 'danger' : isDanger ? 'safe' : c.weight < 0 && !isDanger ? 'warn' : 'safe';
+      const label = isDanger ? (c.weight > 0 ? '⚠️ SÍ' : '✓ SÍ') : '✓ NO';
+      rows += '<div class="goplus-row"><span class="goplus-key">'+c.label+'</span><span class="goplus-val '+cls+'">'+label+'</span></div>';
+    });
+
+    // Tax info
+    const buyTax  = tokenData.buy_tax  ? parseFloat(tokenData.buy_tax)*100  : null;
+    const sellTax = tokenData.sell_tax ? parseFloat(tokenData.sell_tax)*100 : null;
+    if(buyTax  !== null) {
+      riskScore += buyTax > 10 ? 15 : buyTax > 5 ? 5 : 0;
+      rows += '<div class="goplus-row"><span class="goplus-key">Buy Tax</span><span class="goplus-val '+(buyTax>10?'danger':buyTax>5?'warn':'safe')+'">'+(buyTax>10?'⚠️ ':'')+(buyTax.toFixed(1))+'%</span></div>';
+    }
+    if(sellTax !== null) {
+      riskScore += sellTax > 10 ? 20 : sellTax > 5 ? 8 : 0;
+      rows += '<div class="goplus-row"><span class="goplus-key">Sell Tax</span><span class="goplus-val '+(sellTax>10?'danger':sellTax>5?'warn':'safe')+'">'+(sellTax>10?'⚠️ ':'')+(sellTax.toFixed(1))+'%</span></div>';
+    }
+
+    // Holder info
+    const holders = tokenData.holder_count ? parseInt(tokenData.holder_count) : null;
+    const creatorPct = tokenData.creator_percent ? (parseFloat(tokenData.creator_percent)*100).toFixed(1) : null;
+    const lpHolders = tokenData.lp_holder_count ? parseInt(tokenData.lp_holder_count) : null;
+    if(holders !== null) rows += '<div class="goplus-row"><span class="goplus-key">Holders</span><span class="goplus-val '+(holders<100?'warn':'safe')+'">'+holders.toLocaleString()+'</span></div>';
+    if(creatorPct !== null) {
+      riskScore += parseFloat(creatorPct) > 50 ? 20 : parseFloat(creatorPct) > 20 ? 10 : 0;
+      rows += '<div class="goplus-row"><span class="goplus-key">Creator %</span><span class="goplus-val '+(parseFloat(creatorPct)>50?'danger':parseFloat(creatorPct)>20?'warn':'safe')+'">'+creatorPct+'%</span></div>';
+    }
+
+    // LP lock
+    const lpLocked = tokenData.lp_holders && tokenData.lp_holders.some(h => h.is_locked === 1);
+    rows += '<div class="goplus-row"><span class="goplus-key">LP Locked</span><span class="goplus-val '+(lpLocked?'safe':'warn')+'">'+(lpLocked?'✓ Bloqueado':'⚠️ No bloqueado')+'</span></div>';
+    if(!lpLocked) riskScore += 10;
+
+    riskScore = Math.max(0, Math.min(100, riskScore));
+    goplusResult._riskScore = riskScore;
+    goplusResult._buyTax = buyTax;
+    goplusResult._sellTax = sellTax;
+    goplusResult._holders = holders;
+    goplusResult._creatorPct = creatorPct;
+    goplusResult._lpLocked = lpLocked;
+
+    const riskColor = riskScore >= 60 ? 'var(--red)' : riskScore >= 30 ? 'var(--yellow)' : 'var(--green)';
+    const riskLabel = riskScore >= 60 ? '🔴 ALTO RIESGO' : riskScore >= 30 ? '⚠️ RIESGO MEDIO' : '✅ BAJO RIESGO';
+    document.getElementById('deepRiskScore').textContent = riskLabel + ' (' + riskScore + '/100)';
+    document.getElementById('deepRiskScore').style.color = riskColor;
+    document.getElementById('deepRiskFill').style.width = riskScore + '%';
+    document.getElementById('deepRiskFill').style.background = riskColor;
+    document.getElementById('deepGoPlusData').innerHTML = rows || '<div style="font-size:11px;color:var(--text3)">Sin datos adicionales disponibles.</div>';
+
+  } catch(e) {
+    document.getElementById('deepRiskScore').textContent = 'No disponible';
+    document.getElementById('deepGoPlusData').innerHTML =
+      '<div style="font-size:11px;color:var(--text3)">GoPlus no disponible para esta chain/token. '
+      + 'Usa el análisis IA.</div>';
+  }
+
+  return goplusResult;
+}
+
+// ── Deep AI Analysis ──
+async function loadDeepAI(dexSig, goplus) {
+  const aiEl = document.getElementById('deepAI');
+  if(!deepToken) return;
+
+  const t = deepToken;
+  const gpSummary = goplus ? [
+    goplus.is_honeypot==='1' ? '🚨 HONEYPOT DETECTADO' : null,
+    goplus._riskScore >= 60 ? 'Riesgo alto: '+goplus._riskScore+'/100' : null,
+    goplus._buyTax  > 10 ? 'Buy tax '+goplus._buyTax.toFixed(1)+'%' : null,
+    goplus._sellTax > 10 ? 'Sell tax '+goplus._sellTax.toFixed(1)+'%' : null,
+    goplus._creatorPct > 30 ? 'Creator tiene '+goplus._creatorPct+'% del supply' : null,
+    !goplus._lpLocked ? 'LP no bloqueada — riesgo de rug' : 'LP bloqueada ✓',
+    goplus._holders ? goplus._holders+' holders' : null,
+    goplus._riskScore < 20 ? 'Contrato limpio ✓' : null,
+  ].filter(Boolean).join(' · ') : 'GoPlus no disponible para este chain';
+
+  const priceStr = t.price<0.000001 ? t.price.toExponential(2) : t.price<0.01 ? t.price.toFixed(6) : t.price.toFixed(4);
+  const prompt = [
+    'TOKEN DEX: '+t.sym+' ('+t.name+')',
+    'Chain: '+t.chain.toUpperCase(),
+    'Contrato: '+t.addr.slice(0,16)+'...',
+    'Precio: '+priceStr,
+    'Cambio 24H: '+(t.chg>=0?'+':'')+t.chg.toFixed(2)+'%',
+    'Liquidez: $'+t.liq.toLocaleString('en-US',{maximumFractionDigits:0}),
+    'Volumen 24H: $'+t.vol.toLocaleString('en-US',{maximumFractionDigits:0}),
+    'Score RADAR: '+dexSig.scoreNorm+'/100',
+    'Señal: '+dexSig.actionSignal,
+    'GoPlus: '+gpSummary,
+    '',
+    'Analiza este token DEX con este formato EXACTO:',
+    '',
+    'VEREDICTO: [COMPRAR/ESPERAR/EVITAR] — [razon en 5 palabras]',
+    '',
+    'ANALISIS:',
+    '- Liquidez: [suficiente para operar sin slippage alto?]',
+    '- Seguridad: [GoPlus — honeypot, taxes, LP lock]',
+    '- Momentum: [pump legitimo o manipulado?]',
+    '- Riesgo rug: [probabilidad y razones]',
+    '',
+    'PLAN DE ACCION:',
+    'ENTRADA: [precio o condicion exacta]',
+    'TAMANO: [% del capital recomendado]',
+    'STOP-LOSS: [precio o % de caida]',
+    'TARGET: [precio o % de subida]',
+    'VENDER cuando: [senal especifica de salida]',
+    '',
+    'Advertencia si hay riesgo alto.',
+    'Informativo. No es consejo financiero. DYOR.',
+  ].join('\n');
+
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 600,
+        system: IA_SYSTEM,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if(!res.ok) throw new Error('AI HTTP ' + res.status);
+    const d = await res.json();
+    if(d.error) throw new Error(d.error.message);
+    const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    aiEl.innerHTML = '';
+    text.split('\n').forEach(line => {
+      if(!line.trim()) { aiEl.appendChild(document.createElement('br')); return; }
+      const p = document.createElement('p');
+      p.style.marginBottom = '4px';
+      if(line.startsWith('🎯')) { p.style.color='var(--text)'; p.style.fontWeight='800'; p.style.fontSize='13px'; }
+      else if(line.startsWith('⚡')) { p.style.color='var(--yellow)'; p.style.fontWeight='700'; }
+      else if(line.startsWith('•')) { p.style.paddingLeft='8px'; p.style.color='var(--text2)'; }
+      else if(line.startsWith('⚠️')) { p.style.color='#ff6b35'; p.style.fontSize='11px'; }
+      else if(line.includes('ENTRADA')||line.includes('STOP')||line.includes('TARGET')||line.includes('TAMAÑO')) {
+        p.style.color='var(--green)'; p.style.fontFamily='DM Mono,monospace'; p.style.fontSize='11px';
+      }
+      p.textContent = line;
+      aiEl.appendChild(p);
+    });
+  } catch(e) {
+    aiEl.textContent = 'Error generando análisis: ' + e.message + '. Verifica /api/ai.';
+  }
+}
+
+function deepBuy() {
+  if(!deepToken) return;
+  openSwap(deepToken.addr, deepToken.sym, deepToken.chain, deepToken.name, deepToken.price, deepToken.chg);
+  closeDeep();
+}
+
+function deepSell() {
+  if(!deepToken) return;
+  openSwap(deepToken.addr, deepToken.sym, deepToken.chain, deepToken.name, deepToken.price, deepToken.chg);
+  closeDeep();
+  setTimeout(()=>setSwapTab('sell'), 150);
+}
+
 
 function setDexF(f,btn){
   dexFilter=f;
@@ -3651,6 +3958,64 @@ async function refreshPortfolio() {
     </div>
     <div class="swap-body">
       <div id="psaBody"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- DEEP ANALYSIS MODAL -->
+<div class="deep-overlay" id="deepOverlay" onclick="if(event.target===this)closeDeep()">
+  <div class="deep-panel">
+    <div class="deep-header">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800" id="deepTitle">Análisis Profundo</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px" id="deepSubtitle">GoPlus Security · RADAR G-7 IA</div>
+      </div>
+      <span class="deep-close" onclick="closeDeep()">✕</span>
+    </div>
+    <div class="deep-body">
+
+      <!-- Token info bar -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="deepMetrics">
+        <div class="met-card" style="text-align:center"><div class="met-lbl">PRECIO</div><div class="met-val" id="deepPrice">—</div></div>
+        <div class="met-card" style="text-align:center"><div class="met-lbl">24H</div><div class="met-val" id="deepChg">—</div></div>
+        <div class="met-card" style="text-align:center"><div class="met-lbl">LIQUIDEZ</div><div class="met-val" id="deepLiq">—</div></div>
+      </div>
+
+      <!-- RADAR Signal -->
+      <div id="deepSignalBox" class="deep-section">
+        <div class="deep-lbl">⚡ SEÑAL RADAR G-7</div>
+        <div id="deepSignal" style="font-size:14px;font-weight:800;color:var(--text3)">Calculando...</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--text3)" id="deepSignalDetail"></div>
+      </div>
+
+      <!-- GoPlus Security -->
+      <div class="deep-section">
+        <div class="deep-lbl">🛡️ GOPLUS SECURITY — ANÁLISIS DE CONTRATO</div>
+        <div id="deepRiskBar" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:4px">
+            <span>Seguro</span><span id="deepRiskScore">Analizando...</span><span>Peligroso</span>
+          </div>
+          <div class="risk-bar"><div class="risk-fill" id="deepRiskFill" style="width:50%;background:var(--yellow)"></div></div>
+        </div>
+        <div id="deepGoPlusData"><div class="loading"><div class="ls"></div>Consultando GoPlus Security...</div></div>
+      </div>
+
+      <!-- AI Deep Analysis -->
+      <div class="deep-section">
+        <div class="deep-lbl">🤖 ANÁLISIS IA RADAR G-7 — PROFUNDO</div>
+        <div class="ai-deep-block" id="deepAI">
+          <div class="ai-loading"><div class="ai-spin"></div><span style="font-size:10px;color:var(--text3)">Generando análisis profundo con todos los datos...</span></div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:8px">
+        <button id="deepBuyBtn" onclick="deepBuy()" style="flex:1;padding:12px;background:var(--green);color:#000;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">🟢 COMPRAR</button>
+        <button id="deepSellBtn" onclick="deepSell()" style="flex:1;padding:12px;background:var(--red);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">🔴 VENDER</button>
+        <button onclick="closeDeep()" style="padding:12px 16px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:8px;font-size:12px;cursor:pointer">Cerrar</button>
+      </div>
+
     </div>
   </div>
 </div>
