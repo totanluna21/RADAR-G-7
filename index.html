@@ -282,6 +282,39 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes gSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes scanR{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* WALLET SELECTOR MODAL */
+.wallet-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:700;display:none;align-items:center;justify-content:center;}
+.wallet-modal.open{display:flex;}
+.wallet-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:380px;max-width:95vw;padding:24px;position:relative;}
+.wallet-box-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.wallet-box-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:20px;}
+.wallet-close{position:absolute;right:16px;top:16px;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;}
+.wallet-close:hover{color:var(--text);}
+.wallet-options{display:flex;flex-direction:column;gap:8px;}
+.wallet-option{display:flex;align-items:center;gap:14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .2s;}
+.wallet-option:hover{border-color:var(--red);background:var(--red3);}
+.wallet-option.detecting{border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.06);animation:pulse 1.5s infinite;}
+.wallet-option.success{border-color:rgba(0,214,138,0.4);background:rgba(0,214,138,0.08);}
+.wallet-option.not-found{opacity:0.45;cursor:not-allowed;}
+.wallet-option.not-found:hover{border-color:var(--border);background:var(--bg3);}
+.wo-icon{font-size:28px;flex-shrink:0;width:40px;text-align:center;}
+.wo-info{flex:1;}
+.wo-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);}
+.wo-desc{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;}
+.wo-status{font-family:'DM Mono',monospace;font-size:10px;flex-shrink:0;}
+.wo-status.detected{color:var(--green);}
+.wo-status.not-detected{color:var(--text3);}
+.wallet-divider{height:1px;background:var(--border);margin:16px 0;}
+.wallet-paste-section{}
+.wallet-paste-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:7px;}
+.wallet-paste-row{display:flex;gap:8px;}
+.wallet-paste-input{flex:1;background:var(--bg3);border:1.5px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:9px 12px;border-radius:7px;}
+.wallet-paste-input::placeholder{color:var(--text3);}
+.wallet-paste-input:focus{border-color:var(--red);outline:none;}
+.wallet-paste-btn{background:var(--red);color:#fff;border:none;border-radius:7px;padding:0 14px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.wallet-paste-btn:hover{background:var(--red2);}
+.wallet-security{margin-top:14px;background:rgba(0,214,138,0.06);border:1px solid rgba(0,214,138,0.15);border-radius:7px;padding:10px 12px;font-size:10px;color:rgba(0,214,138,0.8);line-height:1.6;}
 </style>
 </head>
 <body>
@@ -515,7 +548,7 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div id="wltDisc" style="display:flex;align-items:center;gap:10px;width:100%">
     <div class="wlt-dot"></div>
     <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">Sin wallet conectada</span>
-    <button class="wlt-btn connect" onclick="connectWallet()">🔗 Conectar Wallet</button>
+    <button class="wlt-btn connect" onclick="openWalletModal()">🔗 Conectar Wallet</button>
     <div class="wlt-sep"></div>
     <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">Soporta: MetaMask · Phantom · Solflare</span>
   </div>
@@ -1445,22 +1478,152 @@ function clearLearn(){if(confirm('¿Limpiar historial?')){learningLog=[];localSt
 // ═══════════════════════════════
 // WALLET
 // ═══════════════════════════════
-async function connectWallet(){
-  try{
-    if(typeof window.ethereum!=='undefined'){
-      const accounts=await window.ethereum.request({method:'eth_requestAccounts'});
-      if(accounts?.length){setWallet(accounts[0],'metamask','🦊','MetaMask');return;}
+function connectWallet(){
+  openWalletModal();
+}
+
+function openWalletModal(){
+  document.getElementById('walletModal').classList.add('open');
+  // Detect which wallets are installed
+  detectWallets();
+}
+
+function closeWalletModal(){
+  document.getElementById('walletModal').classList.remove('open');
+  document.getElementById('pasteAddrInput').value='';
+}
+
+function detectWallets(){
+  const wallets = [
+    { id:'metamask',  detected: typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask },
+    { id:'phantom',   detected: typeof window.solana !== 'undefined' && window.solana.isPhantom },
+    { id:'solflare',  detected: typeof window.solflare !== 'undefined' && window.solflare.isSolflare },
+  ];
+
+  wallets.forEach(w => {
+    const opt = document.getElementById(`wo-${w.id}`);
+    const status = document.getElementById(`ws-${w.id}`);
+    if(opt && status) {
+      if(w.detected) {
+        status.textContent = '✓ Detectada';
+        status.className = 'wo-status detected';
+        opt.classList.remove('not-found');
+      } else {
+        status.textContent = 'No instalada';
+        status.className = 'wo-status not-detected';
+        opt.classList.add('not-found');
+      }
     }
-    if(typeof window.solana!=='undefined'&&window.solana.isPhantom){
-      const r=await window.solana.connect();
-      if(r.publicKey){setWallet(r.publicKey.toString(),'phantom','👻','Phantom');return;}
+  });
+}
+
+async function connectSpecific(provider){
+  const opt = document.getElementById(`wo-${provider}`);
+  const status = document.getElementById(`ws-${provider}`);
+
+  // Check if wallet is installed first
+  const installed = {
+    metamask: typeof window.ethereum !== 'undefined',
+    phantom: typeof window.solana !== 'undefined' && window.solana.isPhantom,
+    solflare: typeof window.solflare !== 'undefined' && window.solflare.isSolflare,
+  };
+
+  if(!installed[provider]) {
+    const installUrls = {
+      metamask: 'https://metamask.io/download/',
+      phantom: 'https://phantom.app/',
+      solflare: 'https://solflare.com/',
+    };
+    if(confirm(`${provider.charAt(0).toUpperCase()+provider.slice(1)} no está instalada.\n¿Abrir página de instalación?`)) {
+      window.open(installUrls[provider], '_blank');
     }
-    if(typeof window.solflare!=='undefined'&&window.solflare.isSolflare){
+    return;
+  }
+
+  // Show detecting state
+  if(opt) opt.classList.add('detecting');
+  if(status) { status.textContent = 'Conectando...'; status.className = 'wo-status'; }
+
+  try {
+    if(provider === 'metamask') {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if(accounts?.length) {
+        setWallet(accounts[0], 'metamask', '🦊', 'MetaMask');
+        window.ethereum.on('accountsChanged', accs => {
+          if(!accs.length) disconnectWallet();
+          else setWallet(accs[0], 'metamask', '🦊', 'MetaMask');
+        });
+        closeWalletModal();
+        return;
+      }
+    }
+
+    if(provider === 'phantom') {
+      const resp = await window.solana.connect();
+      if(resp.publicKey) {
+        setWallet(resp.publicKey.toString(), 'phantom', '👻', 'Phantom');
+        window.solana.on('disconnect', () => disconnectWallet());
+        window.solana.on('accountChanged', (pk) => {
+          if(pk) setWallet(pk.toString(), 'phantom', '👻', 'Phantom');
+          else disconnectWallet();
+        });
+        closeWalletModal();
+        return;
+      }
+    }
+
+    if(provider === 'solflare') {
       await window.solflare.connect();
-      if(window.solflare.publicKey){setWallet(window.solflare.publicKey.toString(),'solflare','☀️','Solflare');return;}
+      if(window.solflare.publicKey) {
+        setWallet(window.solflare.publicKey.toString(), 'solflare', '☀️', 'Solflare');
+        window.solflare.on('disconnect', () => disconnectWallet());
+        window.solflare.on('accountChanged', (pk) => {
+          if(pk) setWallet(pk.toString(), 'solflare', '☀️', 'Solflare');
+          else disconnectWallet();
+        });
+        closeWalletModal();
+        return;
+      }
     }
-    alert('No se detectó ninguna wallet.\n\n💻 COMPUTADOR: Instala la extensión MetaMask en Chrome.\n📱 MÓVIL: Abre este sitio desde el navegador interno de MetaMask o Phantom.');
-  }catch(e){if(e.code!==4001)console.error(e);}
+
+  } catch(e) {
+    if(e.code === 4001 || e.code === 'USER_REJECTED') {
+      // User rejected — reset state
+    } else {
+      console.error('Wallet connect error:', e);
+    }
+  } finally {
+    // Reset detecting state
+    if(opt) opt.classList.remove('detecting');
+    detectWallets();
+  }
+}
+
+function connectByAddress(){
+  const addr = document.getElementById('pasteAddrInput').value.trim();
+  if(!addr) { alert('Pega tu dirección primero.'); return; }
+
+  // Validate address format
+  const isEVM = /^0x[a-fA-F0-9]{40}$/.test(addr);
+  const isSolana = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+
+  if(!isEVM && !isSolana) {
+    alert('Dirección inválida.\nEVM: empieza con 0x (42 caracteres)\nSolana: 32-44 caracteres base58');
+    return;
+  }
+
+  const provider = isEVM ? 'readonly-evm' : 'readonly-sol';
+  const icon = isEVM ? '👁' : '◎';
+  const name = isEVM ? 'Solo lectura (EVM)' : 'Solo lectura (SOL)';
+  setWallet(addr, provider, icon, name);
+  closeWalletModal();
+}
+
+function openWalletConnect(){
+  // Open WalletConnect official app — most universal approach
+  const wcUrl = 'https://walletconnect.com/explorer';
+  window.open(wcUrl, '_blank', 'noopener,noreferrer');
+  closeWalletModal();
 }
 
 function setWallet(address,provider,icon,name){
@@ -1583,5 +1746,75 @@ async function refreshAll(){
 loadData();
 setInterval(loadData,30000);
 </script>
+
+<!-- WALLET SELECTOR MODAL -->
+<div class="wallet-modal" id="walletModal">
+  <div class="wallet-box">
+    <span class="wallet-close" onclick="closeWalletModal()">✕</span>
+    <div class="wallet-box-title">Conectar Wallet</div>
+    <div class="wallet-box-sub">Selecciona tu wallet · Conexión 100% segura sin custodia</div>
+
+    <div class="wallet-options" id="walletOptions">
+
+      <!-- MetaMask -->
+      <div class="wallet-option" id="wo-metamask" onclick="connectSpecific('metamask')">
+        <div class="wo-icon">🦊</div>
+        <div class="wo-info">
+          <div class="wo-name">MetaMask</div>
+          <div class="wo-desc">Ethereum · BNB · Arbitrum · Optimism · Base</div>
+        </div>
+        <div class="wo-status" id="ws-metamask">Verificando...</div>
+      </div>
+
+      <!-- Phantom -->
+      <div class="wallet-option" id="wo-phantom" onclick="connectSpecific('phantom')">
+        <div class="wo-icon">👻</div>
+        <div class="wo-info">
+          <div class="wo-name">Phantom</div>
+          <div class="wo-desc">Solana · Ethereum · Polygon</div>
+        </div>
+        <div class="wo-status" id="ws-phantom">Verificando...</div>
+      </div>
+
+      <!-- Solflare -->
+      <div class="wallet-option" id="wo-solflare" onclick="connectSpecific('solflare')">
+        <div class="wo-icon">☀️</div>
+        <div class="wo-info">
+          <div class="wo-name">Solflare</div>
+          <div class="wo-desc">Solana · Tokens SPL · NFTs</div>
+        </div>
+        <div class="wo-status" id="ws-solflare">Verificando...</div>
+      </div>
+
+      <!-- WalletConnect -->
+      <div class="wallet-option" id="wo-walletconnect" onclick="openWalletConnect()">
+        <div class="wo-icon">🔗</div>
+        <div class="wo-info">
+          <div class="wo-name">WalletConnect</div>
+          <div class="wo-desc">Conecta cualquier wallet móvil con QR</div>
+        </div>
+        <div class="wo-status" style="color:var(--blue)">↗ Abrir</div>
+      </div>
+
+    </div>
+
+    <div class="wallet-divider"></div>
+
+    <!-- Paste address -->
+    <div class="wallet-paste-section">
+      <div class="wallet-paste-label">◈ O PEGA TU DIRECCIÓN (solo lectura)</div>
+      <div class="wallet-paste-row">
+        <input class="wallet-paste-input" id="pasteAddrInput" type="text" placeholder="0x... o dirección Solana (FtZ...)"/>
+        <button class="wallet-paste-btn" onclick="connectByAddress()">Conectar</button>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:5px">Solo dirección pública · Sin acceso a fondos · Solo para ver señales</div>
+    </div>
+
+    <div class="wallet-security">
+      🔒 <strong>100% Sin custodia</strong> — RADAR G-7 NUNCA pide tu clave privada ni seed phrase. Solo leemos tu dirección pública para mostrar señales. Tus fondos siempre bajo tu control.
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
