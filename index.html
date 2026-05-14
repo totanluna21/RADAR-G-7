@@ -1020,7 +1020,9 @@ function buildDexCard(t){
     </div>
     <div style="margin-top:6px;font-size:10px;color:var(--text3)">${sigType==='pump'?'⚡ Alto boost = pump potencial':sigType==='alert'?'⚠️ Actividad inusual':'🆕 Token nuevo en DEX'}</div>
     <div style="margin-top:7px;display:flex;gap:5px">
-      ${addr?`<a href="https://dexscreener.com/${chain}/${addr}" target="_blank" class="btn" style="font-size:9px;padding:3px 7px;flex:1;text-align:center">📡 DexScreener</a>`:''}
+      ${addr?`<a href="https://dexscreener.com/${chain}/${addr}" target="_blank" class="btn" style="font-size:9px;padding:3px 7px">📡 Info</a>`:''}
+      ${addr?`<button onclick="buyDexToken('${addr}','','${chain}')" class="btn" style="font-size:9px;padding:3px 7px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">🟢 Comprar</button>`:''}
+      ${addr?`<button onclick="sellDexToken('${addr}','','${chain}')" class="btn" style="font-size:9px;padding:3px 7px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">🔴 Vender</button>`:''}
     </div>`;
   return card;
 }
@@ -1049,6 +1051,11 @@ async function enrichDexCard(card,t){
       const chgStr=chg!=null?` <span style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'+':''}${chg.toFixed(1)}%</span>`:'';
       priceEl.innerHTML=`${ps}${chgStr} <span style="color:var(--text3);font-size:9px">Vol:${fp(vol)} Liq:${fp(liq)}</span>`;
     }
+    // Update buy/sell button onclick with real sym+name
+    const buyBtn=card.querySelector('button[onclick*="buyDexToken"]');
+    const sellBtn=card.querySelector('button[onclick*="sellDexToken"]');
+    if(buyBtn&&sym) buyBtn.setAttribute('onclick',`buyDexToken('${t.tokenAddress}','${sym}','${chain}')`);
+    if(sellBtn&&sym) sellBtn.setAttribute('onclick',`sellDexToken('${t.tokenAddress}','${sym}','${chain}')`);
   }catch{}
 }
 
@@ -1181,8 +1188,9 @@ function renderSolPairs(el,pairs){
         <span style="font-family:'DM Mono',monospace;font-size:10px;color:${ec}">${ep}</span>
       </div>
       <div style="margin-top:7px;display:flex;gap:5px">
-        ${addr?`<a href="https://dexscreener.com/solana/${addr}" target="_blank" class="btn" style="font-size:9px;padding:3px 7px;flex:1;text-align:center">🦅 DexScreener</a>`:''}
-        ${addr?`<a href="https://birdeye.so/token/${addr}?chain=solana" target="_blank" class="btn" style="font-size:9px;padding:3px 7px">👁 Birdeye</a>`:''}
+        ${addr?`<a href="https://dexscreener.com/solana/${addr}" target="_blank" class="btn" style="font-size:9px;padding:3px 7px">📡 Info</a>`:''}
+        ${addr?`<button onclick="buyDexToken('${addr}','${sym}','solana')" class="btn" style="font-size:9px;padding:3px 7px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">🟢 Comprar</button>`:''}
+        ${addr?`<button onclick="sellDexToken('${addr}','${sym}','solana')" class="btn" style="font-size:9px;padding:3px 7px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">🔴 Vender</button>`:''}
       </div>`;
     el.appendChild(card);
   });
@@ -1671,6 +1679,80 @@ function updateTradeBtn(){
   else if(amt<=0){exec.textContent='Ingresa un monto';exec.disabled=true;}
   else{exec.textContent=`${tradeTab==='buy'?'COMPRAR':'VENDER'} ${tradeCoin?.symbol?.toUpperCase()||'TOKEN'} → Abrir DEX`;exec.disabled=false;}
 }
+// ─── DEX DIRECT BUY/SELL ───
+// Maps chain → best DEX for that chain
+function getChainDex(chain, addr, sym) {
+  const c = (chain||'').toLowerCase();
+  if(c==='solana') {
+    // Jupiter is best for Solana — always has the token if it exists
+    if(addr) return `https://jup.ag/swap/SOL-${addr}`;
+    return `https://jup.ag/swap/SOL-${sym}`;
+  }
+  if(c==='ethereum'||c==='eth') {
+    if(addr) return `https://app.uniswap.org/#/swap?outputCurrency=${addr}&chain=mainnet`;
+    return `https://app.uniswap.org/#/swap?outputCurrency=${sym}`;
+  }
+  if(c==='bsc'||c==='binance-smart-chain') {
+    if(addr) return `https://pancakeswap.finance/swap?outputCurrency=${addr}&chain=bsc`;
+    return `https://pancakeswap.finance/swap`;
+  }
+  if(c==='base') {
+    if(addr) return `https://aerodrome.finance/swap?to=${addr}`;
+    return `https://app.uniswap.org/#/swap?chain=base&outputCurrency=${addr}`;
+  }
+  if(c==='arbitrum') {
+    if(addr) return `https://app.uniswap.org/#/swap?chain=arbitrum&outputCurrency=${addr}`;
+    return `https://app.uniswap.org/#/swap?chain=arbitrum`;
+  }
+  if(c==='polygon') {
+    if(addr) return `https://app.uniswap.org/#/swap?chain=polygon&outputCurrency=${addr}`;
+    return `https://app.uniswap.org/#/swap?chain=polygon`;
+  }
+  // Default: DexScreener pair page (user can buy from there)
+  return `https://dexscreener.com/${chain}/${addr}`;
+}
+
+function buyDexToken(addr, sym, chain) {
+  // Warn if wallet not connected
+  if(!walletState.connected) {
+    const proceed = confirm(`⚠️ No tienes wallet conectada.\n\nAl continuar se abrirá el DEX y podrás conectar tu wallet ahí.\n\n¿Continuar?`);
+    if(!proceed) return;
+  }
+  const url = getChainDex(chain, addr, sym);
+  // Log intent to learning
+  const entry = {
+    id: addr||sym,
+    sym: sym||addr?.slice(0,8)||'DEX TOKEN',
+    name: sym||'DEX Token',
+    signal: 'COMPRA MANUAL',
+    score: 0, price: 0, c24h: 0, vr: '—',
+    type: 'buy', enter: '—',
+    timestamp: new Date().toISOString(),
+    result: 'pending', action: 'COMPRA'
+  };
+  learningLog.unshift(entry);
+  if(learningLog.length>50) learningLog=learningLog.slice(0,50);
+  localStorage.setItem('rg7v4', JSON.stringify(learningLog));
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function sellDexToken(addr, sym, chain) {
+  if(!walletState.connected) {
+    const proceed = confirm(`⚠️ No tienes wallet conectada.\n\nAl continuar se abrirá el DEX para vender.\n\n¿Continuar?`);
+    if(!proceed) return;
+  }
+  const c = (chain||'').toLowerCase();
+  let url;
+  if(c==='solana') {
+    // Sell: swap token → SOL
+    url = addr ? `https://jup.ag/swap/${addr}-SOL` : `https://jup.ag/swap/${sym}-SOL`;
+  } else {
+    // For EVM, open Uniswap with inputCurrency = token
+    url = addr ? `https://app.uniswap.org/#/swap?inputCurrency=${addr}` : getChainDex(chain, addr, sym);
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function executeTrade(){
   if(!walletState.connected||!tradeCoin)return;
   const sym=tradeCoin.symbol?.toUpperCase()||'';
