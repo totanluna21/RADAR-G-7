@@ -1555,9 +1555,11 @@ function buildDexCard(t){
     // Buttons
     +(addr
       ? '<div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">'
-        +'<button class="btn dex-analyze-btn" style="font-size:9px;padding:3px 9px;background:rgba(61,142,245,0.12);border-color:rgba(61,142,245,0.3);color:var(--blue);font-weight:700">🔍 Analizar</button>'
-        +'<button class="btn dex-buy-btn" style="font-size:9px;padding:3px 9px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">&#x1F7E2; Comprar</button>'
-        +'<button class="btn dex-sell-btn" style="font-size:9px;padding:3px 9px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">&#x1F534; Vender</button>'
+        +'<button class="btn dex-analyze-btn" style="font-size:9px;padding:3px 8px;background:rgba(61,142,245,0.12);border-color:rgba(61,142,245,0.3);color:var(--blue);font-weight:700">🔍 Analizar</button>'
+        +'<a class="btn dex-chart-btn" href="https://dexscreener.com/'+chain+'/'+addr+'" target="_blank" rel="noopener noreferrer" style="font-size:9px;padding:3px 8px;color:var(--text2);text-decoration:none">📈 Gráfica</a>'
+        +'<button class="btn dex-copy-btn" style="font-size:9px;padding:3px 8px;color:var(--text3)">📋 Copiar</button>'
+        +'<button class="btn dex-buy-btn" style="font-size:9px;padding:3px 8px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">🟢 Comprar</button>'
+        +'<button class="btn dex-sell-btn" style="font-size:9px;padding:3px 8px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">🔴 Vender</button>'
         +'</div>'
       : '');
   // Set onclick via DOM to avoid quote escaping issues
@@ -1570,12 +1572,30 @@ function buildDexCard(t){
   // Set onclick via DOM — no inline quote issues
   if(addr){
     const _a=addr, _c=chain;
-    const buyB  = card.querySelector('.dex-buy-btn');
-    const sellB = card.querySelector('.dex-sell-btn');
-    const anaB  = card.querySelector('.dex-analyze-btn');
+    const buyB   = card.querySelector('.dex-buy-btn');
+    const sellB  = card.querySelector('.dex-sell-btn');
+    const anaB   = card.querySelector('.dex-analyze-btn');
+    const copyB  = card.querySelector('.dex-copy-btn');
     if(buyB)  buyB.onclick  = () => buyDexToken(_a, '', _c);
     if(sellB) sellB.onclick = () => sellDexToken(_a, '', _c);
     if(anaB)  anaB.onclick  = () => openDeep(_a, '', '', _c, 0, 0, 0, 0);
+    if(copyB) copyB.onclick = () => {
+      navigator.clipboard.writeText(_a).then(() => {
+        copyB.textContent = '✓ Copiado';
+        copyB.style.color = 'var(--green)';
+        setTimeout(() => { copyB.textContent = '📋 Copiar'; copyB.style.color = 'var(--text3)'; }, 2000);
+      }).catch(() => {
+        // Fallback for browsers without clipboard API
+        const inp = document.createElement('input');
+        inp.value = _a;
+        document.body.appendChild(inp);
+        inp.select();
+        document.execCommand('copy');
+        document.body.removeChild(inp);
+        copyB.textContent = '✓ Copiado';
+        setTimeout(() => { copyB.textContent = '📋 Copiar'; }, 2000);
+      });
+    };
   }
   return card;
 }
@@ -1640,13 +1660,31 @@ async function enrichDexCard(card,t){
     const volEl=card.querySelector('.dex-vol-el');
     if(liqEl) liqEl.textContent='Liq: '+fp(liq);
     if(volEl) volEl.textContent='Vol: '+fp(vol);
-    // Update analyze button with real data
-    const anaBtn = card.querySelector('.dex-analyze-btn');
-    if(anaBtn && t.tokenAddress) {
-      const _a=t.tokenAddress, _s=sym, _n=name, _c=t.chainId||card.dataset.chain||'ethereum';
-      const _p=price, _h=chg, _l=liq, _v=vol;
-      anaBtn.onclick = () => openDeep(_a, _s, _n, _c, _p, _h, _l, _v);
+    // Update analyze button + chart link + copy with real data
+    const anaBtn   = card.querySelector('.dex-analyze-btn');
+    const chartBtn = card.querySelector('.dex-chart-btn');
+    const copyBtn2 = card.querySelector('.dex-copy-btn');
+    const _ac=t.tokenAddress, _sc=sym, _nc=name;
+    const _cc=t.chainId||card.dataset.chain||'ethereum';
+    const _pc=price, _hc=chg, _lc=liq, _vc=vol;
+    if(anaBtn)   anaBtn.onclick = () => openDeep(_ac, _sc, _nc, _cc, _pc, _hc, _lc, _vc);
+    if(chartBtn) {
+      chartBtn.href = 'https://dexscreener.com/'+_cc+'/'+_ac;
+      chartBtn.title = 'Ver gráfica de '+(_sc||_nc)+' en DexScreener';
     }
+    if(copyBtn2) copyBtn2.onclick = () => {
+      navigator.clipboard.writeText(_ac).then(() => {
+        copyBtn2.textContent = '✓ Copiado';
+        copyBtn2.style.color = 'var(--green)';
+        setTimeout(()=>{ copyBtn2.textContent='📋 Copiar'; copyBtn2.style.color='var(--text3)'; },2000);
+      }).catch(()=>{
+        const inp=document.createElement('input'); inp.value=_ac;
+        document.body.appendChild(inp); inp.select(); document.execCommand('copy');
+        document.body.removeChild(inp);
+        copyBtn2.textContent='✓ Copiado';
+        setTimeout(()=>{ copyBtn2.textContent='📋 Copiar'; },2000);
+      });
+    };
   }catch(e){console.warn('Enrich error:',e.message);}
 }
 
@@ -1755,6 +1793,22 @@ function openDeep(addr, sym, name, chain, price, chg, liq, vol) {
   document.getElementById('deepTitle').textContent = sym || name || 'Análisis Profundo';
   document.getElementById('deepSubtitle').textContent = chain.toUpperCase() + ' · ' + (addr ? addr.slice(0,10)+'...' : 'Token DEX');
 
+  // Set chart / birdeye / copy links
+  const dexLink = document.getElementById('deepDexLink');
+  const birdLink = document.getElementById('deepBirdeyeLink');
+  const copyAddrBtn = document.getElementById('deepCopyAddr');
+  if(dexLink && addr) {
+    dexLink.href = 'https://dexscreener.com/' + chain + '/' + addr;
+    dexLink.style.display = 'inline-block';
+  }
+  if(birdLink && addr) {
+    const isSol = chain.toLowerCase() === 'solana';
+    birdLink.href = isSol ? 'https://birdeye.so/token/'+addr+'?chain=solana' : 'https://app.uniswap.org/#/tokens/'+addr;
+    birdLink.textContent = isSol ? '🦅 Birdeye' : '🦄 Uniswap';
+    birdLink.style.display = 'inline-block';
+  }
+  if(copyAddrBtn) copyAddrBtn.style.display = addr ? 'inline-block' : 'none';
+
   // Fill basic metrics
   const p = deepToken.price;
   const ps = p<0.000001 ? '$'+p.toExponential(2) : p<0.01 ? '$'+p.toFixed(6) : p<1 ? '$'+p.toFixed(4) : '$'+p.toFixed(2);
@@ -1798,6 +1852,21 @@ function closeDeep() {
   document.getElementById('deepOverlay').classList.remove('open');
   deepToken = null;
 }
+
+function copyDeepAddr() {
+  if(!deepToken || !deepToken.addr) return;
+  const btn = document.getElementById('deepCopyAddr');
+  navigator.clipboard.writeText(deepToken.addr).then(() => {
+    if(btn){ btn.textContent='✓ Copiado!'; btn.style.color='var(--green)'; }
+    setTimeout(()=>{ if(btn){ btn.textContent='📋 Copiar contrato'; btn.style.color='var(--text3)'; } },2500);
+  }).catch(() => {
+    const inp=document.createElement('input'); inp.value=deepToken.addr;
+    document.body.appendChild(inp); inp.select(); document.execCommand('copy');
+    document.body.removeChild(inp);
+    if(btn){ btn.textContent='✓ Copiado!'; setTimeout(()=>{ btn.textContent='📋 Copiar contrato'; },2500); }
+  });
+}
+
 
 // ── GoPlus Security API ──
 async function loadGoPlusData(addr, chain, dexSig) {
@@ -2137,6 +2206,50 @@ function renderSolPairs(el,pairs){
         ${addr?`<button onclick="buyDexToken('${addr}','${sym}','solana')" class="btn" style="font-size:9px;padding:3px 7px;background:rgba(0,214,138,0.1);border-color:rgba(0,214,138,0.25);color:var(--green);font-weight:700">🟢 Comprar</button>`:''}
         ${addr?`<button onclick="sellDexToken('${addr}','${sym}','solana')" class="btn" style="font-size:9px;padding:3px 7px;background:rgba(232,48,58,0.1);border-color:rgba(232,48,58,0.25);color:var(--red);font-weight:700">🔴 Vender</button>`:''}
       </div>`;
+    // Set sol card onclick via DOM
+    if(addr){
+      const _sa=addr,_ss=sym,_sn=name,_sp=price,_sh=chg24,_sl=liq,_sv=vol;
+      const solCopyB    = card.querySelector('.sol-copy-btn');
+      const solAnalyzeB = card.querySelector('.sol-analyze-btn');
+      const solBuyB     = card.querySelector('.sol-buy-btn');
+      const solSellB    = card.querySelector('.sol-sell-btn');
+      if(solCopyB) solCopyB.onclick = () => {
+        navigator.clipboard.writeText(_sa).then(()=>{
+          solCopyB.textContent='✓ Copiado'; solCopyB.style.color='var(--green)';
+          setTimeout(()=>{ solCopyB.textContent='📋 Copiar'; solCopyB.style.color='var(--text3)'; },2000);
+        }).catch(()=>{
+          const inp=document.createElement('input'); inp.value=_sa;
+          document.body.appendChild(inp); inp.select(); document.execCommand('copy');
+          document.body.removeChild(inp); solCopyB.textContent='✓ Copiado';
+          setTimeout(()=>{ solCopyB.textContent='📋 Copiar'; },2000);
+        });
+      };
+      if(solAnalyzeB) solAnalyzeB.onclick = () => openDeep(_sa,_ss,_sn,'solana',_sp,_sh,_sl,_sv);
+      if(solBuyB)     solBuyB.onclick     = () => buyDexToken(_sa,_ss,'solana',_sn,_sp,_sh);
+      if(solSellB)    solSellB.onclick    = () => sellDexToken(_sa,_ss,'solana',_sn,_sp,_sh);
+    }
+    // Set sol card onclick via DOM
+    if(addr){
+      const _sa=addr,_ss=sym,_sn=name,_sp=price,_sh=chg24,_sl=liq,_sv=vol;
+      const solCopyB    = card.querySelector('.sol-copy-btn');
+      const solAnalyzeB = card.querySelector('.sol-analyze-btn');
+      const solBuyB     = card.querySelector('.sol-buy-btn');
+      const solSellB    = card.querySelector('.sol-sell-btn');
+      if(solCopyB) solCopyB.onclick = () => {
+        navigator.clipboard.writeText(_sa).then(()=>{
+          solCopyB.textContent='✓ Copiado'; solCopyB.style.color='var(--green)';
+          setTimeout(()=>{ solCopyB.textContent='📋 Copiar'; solCopyB.style.color='var(--text3)'; },2000);
+        }).catch(()=>{
+          const inp=document.createElement('input'); inp.value=_sa;
+          document.body.appendChild(inp); inp.select(); document.execCommand('copy');
+          document.body.removeChild(inp); solCopyB.textContent='✓ Copiado';
+          setTimeout(()=>{ solCopyB.textContent='📋 Copiar'; },2000);
+        });
+      };
+      if(solAnalyzeB) solAnalyzeB.onclick = () => openDeep(_sa,_ss,_sn,'solana',_sp,_sh,_sl,_sv);
+      if(solBuyB)     solBuyB.onclick     = () => buyDexToken(_sa,_ss,'solana',_sn,_sp,_sh);
+      if(solSellB)    solSellB.onclick    = () => sellDexToken(_sa,_ss,'solana',_sn,_sp,_sh);
+    }
     el.appendChild(card);
   });
 }
@@ -3967,9 +4080,14 @@ async function refreshPortfolio() {
 <div class="deep-overlay" id="deepOverlay" onclick="if(event.target===this)closeDeep()">
   <div class="deep-panel">
     <div class="deep-header">
-      <div>
+      <div style="flex:1;min-width:0">
         <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800" id="deepTitle">Análisis Profundo</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px" id="deepSubtitle">GoPlus Security · RADAR G-7 IA</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)" id="deepSubtitle">GoPlus Security · RADAR G-7 IA</div>
+          <button id="deepCopyAddr" onclick="copyDeepAddr()" style="font-family:'DM Mono',monospace;font-size:9px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:2px 8px;cursor:pointer">📋 Copiar contrato</button>
+          <a id="deepDexLink" href="#" target="_blank" rel="noopener noreferrer" style="font-family:'DM Mono',monospace;font-size:9px;background:var(--bg3);border:1px solid var(--border);color:var(--blue);border-radius:4px;padding:2px 8px;text-decoration:none">📈 Ver gráfica</a>
+          <a id="deepBirdeyeLink" href="#" target="_blank" rel="noopener noreferrer" style="font-family:'DM Mono',monospace;font-size:9px;background:var(--bg3);border:1px solid var(--border);color:#9966ff;border-radius:4px;padding:2px 8px;text-decoration:none;display:none">🦅 Birdeye</a>
+        </div>
       </div>
       <span class="deep-close" onclick="closeDeep()">✕</span>
     </div>
