@@ -893,6 +893,21 @@ function oracleSelfLearn() {
   });
 }
 
+// Memoize calcSignal — skip recalculation if price hasn't changed
+const _signalCache = new Map();
+function calcSignalCached(coin) {
+  const key = coin.id + '_' + coin.current_price;
+  if(_signalCache.has(key)) return _signalCache.get(key);
+  const result = calcSignal(coin);
+  _signalCache.set(key, result);
+  // Keep cache small
+  if(_signalCache.size > 200) {
+    const first = _signalCache.keys().next().value;
+    _signalCache.delete(first);
+  }
+  return result;
+}
+
 function calcOracle(m) {
   const tokenBias = OracleMemory.getBias(m.id || 'global');
   // D1: Momentum
@@ -1092,29 +1107,37 @@ function calcSignal(coin){
 // ═══════════════════════════════
 // DATA LOADING — CoinGecko ONLY (guaranteed to work)
 // ═══════════════════════════════
-async function fetchWithTimeout(url, ms=8000){
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Timeout')), ms)
-  );
-  // Try with default mode first
+// Cache for repeated API calls
+const _apiCache = new Map();
+const _CACHE_TTL = 25000; // 25 seconds
+
+async function fetchWithTimeout(url, ms=5000, useCache=false){
+  // Check cache first
+  if(useCache && _apiCache.has(url)){
+    const {data, ts} = _apiCache.get(url);
+    if(Date.now() - ts < _CACHE_TTL) return { ok:true, json: ()=>Promise.resolve(data), _cached:true };
+  }
+
+  const controller = new AbortController();
+  const tid = setTimeout(()=>controller.abort(), ms);
   try {
-    return await Promise.race([
-      fetch(url, {
-        mode: 'cors',
-        headers: {'Accept': 'application/json'}
-      }),
-      timeoutPromise
-    ]);
-  } catch(e) {
-    // On CORS error, try without custom headers
-    try {
-      return await Promise.race([
-        fetch(url),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
-      ]);
-    } catch(e2) {
-      throw e2;
+    const r = await fetch(url, { signal: controller.signal });
+    clearTimeout(tid);
+    if(useCache && r.ok){
+      const clone = r.clone();
+      clone.json().then(d=>_apiCache.set(url,{data:d,ts:Date.now()})).catch(()=>{});
     }
+    return r;
+  } catch(e) {
+    clearTimeout(tid);
+    // Retry once without abort signal
+    try {
+      const r2 = await Promise.race([
+        fetch(url),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout')),ms))
+      ]);
+      return r2;
+    } catch(e2) { throw e2; }
   }
 }
 
@@ -1122,6 +1145,8 @@ const CG_URLS = [
   'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&price_change_percentage=1h,24h,7d&sparkline=false',
   'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=1h,24h,7d&sparkline=false',
 ];
+// Performance metrics
+const _perf = { loadStart: 0, lastLoad: 0 };
 
 async function fetchCoinGecko() {
   for (const url of CG_URLS) {
@@ -1140,8 +1165,9 @@ async function fetchCoinGecko() {
 }
 
 async function loadData(){
+  _perf.loadStart = performance.now();
   try{
-    // PRIMARY: CoinGecko
+    // PRIMARY: CoinGecko — with 25s cache on repeated calls
     const coins = await fetchCoinGecko();
     allCoins = coins;
     allAlerts=allCoins.map(c=>({coin:c,sig:calcSignal(c)})).filter(x=>x.sig.type!=='neutral'&&x.sig.type!=='watch').sort((a,b)=>b.sig.score-a.sig.score);
@@ -1159,6 +1185,8 @@ async function loadData(){
     checkPositionSignals();
     renderPortfolio();
     checkPositionSignals();
+    _perf.lastLoad = Math.round(performance.now() - _perf.loadStart);
+    document.getElementById('ovSub').textContent = allCoins.length+' tokens · '+new Date().toLocaleTimeString()+' · cargó en '+_perf.lastLoad+'ms';
     // Load secondary APIs in background — non-blocking
     loadIntel();
   } catch(e) {
@@ -1171,42 +1199,32 @@ async function loadData(){
 }
 
 async function loadIntel(){
-  // Fear & Greed
-  try{
-    const r=await fetchWithTimeout('https://api.alternative.me/fng/?limit=1',5000);
-    const d=await r.json();
-    if(d.data?.[0]){
-      marketIntel.fearGreed=d.data[0];
-      renderFearGreed(d.data[0]);
-    }
-  }catch{}
+  // Run ALL intel APIs in parallel — much faster
+  const [fgRes, frRes, oiRes, newsRes] = await Promise.allSettled([
+    fetchWithTimeout('https://api.alternative.me/fng/?limit=1', 5000).then(r=>r.json()),
+    fetchWithTimeout('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1', 5000).then(r=>r.json()),
+    fetchWithTimeout('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT', 5000).then(r=>r.json()),
+    fetchWithTimeout('https://api.coingecko.com/api/v3/news?per_page=20', 5000).then(r=>r.json()),
+  ]);
 
-  // Binance Funding Rate
-  try{
-    const r=await fetchWithTimeout('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1',5000);
-    const d=await r.json();
-    if(d?.[0]){marketIntel.fundingRate=d[0];renderFundingRate(d[0]);}
-  }catch{}
-
-  // Binance Open Interest
-  try{
-    const r=await fetchWithTimeout('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT',5000);
-    const d=await r.json();
-    if(d?.openInterest){marketIntel.openInterest=d;renderOI(d);}
-  }catch{
-    // fallback: use BTC volume
-    const btc=allCoins.find(c=>c.id==='bitcoin');
-    if(btc)renderOI({openInterest:null,btcVol:btc.total_volume});
+  if(fgRes.status==='fulfilled' && fgRes.value?.data?.[0]){
+    marketIntel.fearGreed = fgRes.value.data[0];
+    renderFearGreed(fgRes.value.data[0]);
   }
-
-  // CoinGecko News
-  try{
-    const r=await fetchWithTimeout('https://api.coingecko.com/api/v3/news?per_page=20',5000);
-    const d=await r.json();
-    if(d.data?.length){
-      renderNews(d.data);
-    }
-  }catch{}
+  if(frRes.status==='fulfilled' && frRes.value?.[0]){
+    marketIntel.fundingRate = frRes.value[0];
+    renderFundingRate(frRes.value[0]);
+  }
+  if(oiRes.status==='fulfilled' && oiRes.value?.openInterest){
+    marketIntel.openInterest = oiRes.value;
+    renderOI(oiRes.value);
+  } else {
+    const btc = allCoins.find(c=>c.id==='bitcoin');
+    if(btc) renderOI({openInterest:null, btcVol:btc.total_volume});
+  }
+  if(newsRes.status==='fulfilled' && newsRes.value?.data?.length){
+    renderNews(newsRes.value.data);
+  }
 }
 
 // ═══════════════════════════════
@@ -1344,6 +1362,8 @@ function renderOvTable(){
 
 function renderTokensTable(){
   const el=document.getElementById('tokTable');el.innerHTML='';
+  // Use RAF to avoid blocking UI
+  requestAnimationFrame(()=>{
   let list=allCoins.map(c=>({c,s:calcSignal(c)}));
   if(tokenFilter==='pump')list=list.filter(x=>x.s.type==='pump');
   else if(tokenFilter==='dump')list=list.filter(x=>x.s.type==='dump');
@@ -1351,7 +1371,12 @@ function renderTokensTable(){
   else if(tokenFilter==='alert')list=list.filter(x=>['pump','dump','rug','alert'].includes(x.s.type));
   list.sort((a,b)=>b.s.score-a.s.score);
   if(!list.length){el.innerHTML='<div class="empty">Sin tokens con este filtro</div>';return;}
-  list.forEach((x,i)=>el.appendChild(buildRow(x.c,x.s,i)));
+  // Render in batches of 20 for smooth UI
+  const batch = list.slice(0,20);
+  const rest  = list.slice(20);
+  batch.forEach((x,i)=>el.appendChild(buildRow(x.c,x.s,i)));
+  if(rest.length) setTimeout(()=>rest.forEach((x,i)=>el.appendChild(buildRow(x.c,x.s,i+20))),50);
+  }); // end RAF
 }
 
 function setTF(f,btn){
@@ -1603,7 +1628,7 @@ function buildDexCard(t){
 async function enrichDexCard(card,t){
   if(!t.tokenAddress)return;
   try{
-    const r=await fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${t.tokenAddress}`,6000);
+    const r=await fetchWithTimeout('https://api.dexscreener.com/latest/dex/tokens/'+t.tokenAddress, 5000, true);
     const d=await r.json();
     const pair=d.pairs?.[0];
     if(!pair)return;
@@ -1703,26 +1728,27 @@ async function scanBestDex() {
     const d = await r.json();
     const tokens = Array.isArray(d) ? d : [];
 
-    // Enrich top 15 tokens and score them
-    const scored = [];
-    for(const t of tokens.slice(0,15)) {
-      if(!t.tokenAddress) continue;
-      try {
-        const r2 = await fetchWithTimeout('https://api.dexscreener.com/latest/dex/tokens/'+t.tokenAddress, 5000);
-        const d2 = await r2.json();
-        const pair = d2.pairs?.[0];
-        if(!pair) continue;
-        const chg   = pair.priceChange?.h24 ?? 0;
-        const liq   = pair.liquidity?.usd || 0;
-        const vol   = pair.volume?.h24 || 0;
-        const price = parseFloat(pair.priceUsd||0);
-        const sym   = pair.baseToken?.symbol || t.tokenAddress.slice(0,6);
-        const name  = pair.baseToken?.name || sym;
-        const chain = t.chainId || pair.chainId || 'unknown';
-        const sig   = calcDexTokenSignal(t.totalAmount||0, chg, liq, vol, chain);
-        scored.push({ t, pair, sym, name, price, chg, liq, vol, chain, sig });
-      } catch{}
-    }
+    // Enrich top 10 tokens in PARALLEL — much faster
+    const enrichJobs = tokens.slice(0,10)
+      .filter(t=>t.tokenAddress)
+      .map(async t => {
+        try {
+          const r2 = await fetchWithTimeout('https://api.dexscreener.com/latest/dex/tokens/'+t.tokenAddress, 4000);
+          const d2 = await r2.json();
+          const pair = d2.pairs?.[0];
+          if(!pair) return null;
+          const chg   = pair.priceChange?.h24 ?? 0;
+          const liq   = pair.liquidity?.usd || 0;
+          const vol   = pair.volume?.h24 || 0;
+          const price = parseFloat(pair.priceUsd||0);
+          const sym   = pair.baseToken?.symbol || t.tokenAddress.slice(0,6);
+          const name  = pair.baseToken?.name || sym;
+          const chain = t.chainId || pair.chainId || 'unknown';
+          const sig   = calcDexTokenSignal(t.totalAmount||0, chg, liq, vol, chain);
+          return { t, pair, sym, name, price, chg, liq, vol, chain, sig };
+        } catch{ return null; }
+      });
+    const scored = (await Promise.all(enrichJobs)).filter(Boolean);
 
     // Sort by score descending, show top 5 ENTRAR AHORA
     const best = scored
@@ -3282,7 +3308,7 @@ async function refreshAll(){
 // INIT
 // ═══════════════════════════════
 loadData();
-setInterval(loadData,30000);
+setInterval(loadData,45000); // 45s — optimal for free CoinGecko tier
 setInterval(checkPositionSignals, 30000);
 setInterval(oracleSelfLearn, 30000);
 
