@@ -466,7 +466,12 @@ input,textarea,button{font-family:'DM Sans',sans-serif;outline:none;}button{curs
   <div class="nav-item" onclick="showPage('portfolio')" id="nav-portfolio"><span>💼</span> Portfolio<span class="nav-badge" id="portBadge" style="display:none">0</span></div>
   <div class="nav-item" onclick="showPage('portfolio')" id="nav-portfolio"><span>💼</span> Portfolio<span class="nav-badge" id="portBadge" style="display:none">0</span></div>
   <div class="nav-item" onclick="showPage('learning')" id="nav-learning"><span>📚</span> Learning</div>
-  <div class="sidebar-ver">RADAR G-7 v4.0 · 8 fuentes de datos</div>
+  <div style="margin-top:auto;padding:8px 10px;flex-shrink:0">
+    <button onclick="openTgModal()" style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(0,136,204,0.12);border:1px solid rgba(0,136,204,0.25);border-radius:7px;color:#0088cc;cursor:pointer;font-size:11px;font-weight:600;transition:all .15s" id="tgSideBtn">
+      <span>📱</span><span>Telegram Alerts</span><div id="tgSideDot" style="width:7px;height:7px;border-radius:50%;background:var(--text3);margin-left:auto"></div>
+    </button>
+  </div>
+  <div class="sidebar-ver">RADAR G-7 v4.0 · 8 fuentes</div>
 </div>
 
 <!-- MAIN -->
@@ -732,6 +737,8 @@ const SECURITY = {
     'api.coingecko.com','api.alternative.me','fapi.binance.com',
     'api.binance.com','api.dexscreener.com','api.whale-alert.io',
     'api.gopluslabs.io',
+    'api.telegram.org',
+    'api.binance.com',
   ],
   ALLOWED_OPEN: [
     'app.uniswap.org','jup.ag','pancakeswap.finance','raydium.io',
@@ -1147,6 +1154,160 @@ const CG_URLS = [
 ];
 // Performance metrics
 const _perf = { loadStart: 0, lastLoad: 0 };
+
+// ══════════════════════════════════════════════════════════
+// FREE SIGNAL SOURCES — Extra data at zero cost
+// ══════════════════════════════════════════════════════════
+
+// Telegram Bot config
+let TG_CONFIG = JSON.parse(localStorage.getItem('rg7_tg_config') || '{"token":"8911450846:AAF-KlvSaGQpVXhZUQCcNDXyiupMi0KNnpo","chatId":"6524529867","enabled":true}');
+
+// Real technical indicators cache from Binance OHLCV
+const _technicalCache = new Map();
+
+// ── Real RSI/MACD/BB from Binance OHLCV ──
+async function fetchRealTechnicals(symbol) {
+  const cacheKey = symbol + '_tech';
+  const cached = _technicalCache.get(cacheKey);
+  if(cached && Date.now() - cached.ts < 60000) return cached.data; // 1min cache
+
+  try {
+    // Binance OHLCV — free, no key needed, real candles
+    const sym = symbol.toUpperCase() + 'USDT';
+    const r = await fetchWithTimeout(
+      'https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1h&limit=50',
+      5000
+    );
+    if(!r.ok) throw new Error('Binance '+r.status);
+    const candles = await r.json();
+    if(!candles || candles.length < 14) throw new Error('Not enough candles');
+
+    const closes = candles.map(c => parseFloat(c[4]));
+    const highs  = candles.map(c => parseFloat(c[2]));
+    const lows   = candles.map(c => parseFloat(c[3]));
+    const vols   = candles.map(c => parseFloat(c[5]));
+
+    const rsi  = calcRSI(closes, 14);
+    const macd = calcMACD(closes);
+    const bb   = calcBollinger(closes, 20);
+    const atr  = calcATR(highs, lows, closes, 14);
+
+    const result = { rsi, macd, bb, atr, closes, vols, symbol: sym };
+    _technicalCache.set(cacheKey, { data: result, ts: Date.now() });
+    return result;
+  } catch(e) {
+    return null;
+  }
+}
+
+// ── RSI (Relative Strength Index) ──
+function calcRSI(closes, period=14) {
+  if(closes.length < period+1) return 50;
+  let gains=0, losses=0;
+  for(let i=closes.length-period; i<closes.length; i++){
+    const diff = closes[i]-closes[i-1];
+    if(diff>=0) gains+=diff; else losses+=Math.abs(diff);
+  }
+  const avgGain = gains/period;
+  const avgLoss = losses/period;
+  if(avgLoss===0) return 100;
+  const rs = avgGain/avgLoss;
+  return Math.round(100-(100/(1+rs)));
+}
+
+// ── MACD (Moving Average Convergence Divergence) ──
+function calcMACD(closes) {
+  const ema = (arr, period) => {
+    const k = 2/(period+1);
+    let emaVal = arr[0];
+    for(let i=1; i<arr.length; i++) emaVal = arr[i]*k + emaVal*(1-k);
+    return emaVal;
+  };
+  if(closes.length < 26) return { value:0, signal:0, histogram:0, trend:'neutral' };
+  const ema12 = ema(closes.slice(-26), 12);
+  const ema26 = ema(closes, 26);
+  const macdVal = ema12 - ema26;
+  const signalLine = ema([macdVal], 9);
+  const histogram = macdVal - signalLine;
+  return {
+    value: macdVal,
+    signal: signalLine,
+    histogram,
+    trend: histogram > 0 ? 'bullish' : 'bearish',
+    crossover: Math.abs(histogram) < Math.abs(macdVal)*0.1 ? 'crossing' : null
+  };
+}
+
+// ── Bollinger Bands ──
+function calcBollinger(closes, period=20) {
+  if(closes.length < period) return { upper:0, middle:0, lower:0, position:50, squeeze:false };
+  const slice = closes.slice(-period);
+  const mean  = slice.reduce((a,b)=>a+b,0)/period;
+  const std   = Math.sqrt(slice.reduce((a,b)=>a+(b-mean)**2,0)/period);
+  const upper = mean + 2*std;
+  const lower = mean - 2*std;
+  const last  = closes[closes.length-1];
+  const position = upper===lower ? 50 : Math.max(0,Math.min(100,((last-lower)/(upper-lower))*100));
+  const bandwidth = (upper-lower)/mean*100;
+  return { upper, middle:mean, lower, position:Math.round(position), bandwidth, squeeze: bandwidth<2 };
+}
+
+// ── ATR (Average True Range) — volatility ──
+function calcATR(highs, lows, closes, period=14) {
+  if(highs.length < period+1) return 0;
+  const trs = [];
+  for(let i=1; i<highs.length; i++){
+    trs.push(Math.max(
+      highs[i]-lows[i],
+      Math.abs(highs[i]-closes[i-1]),
+      Math.abs(lows[i]-closes[i-1])
+    ));
+  }
+  return trs.slice(-period).reduce((a,b)=>a+b,0)/period;
+}
+
+// ── CoinPaprika — free, no rate limits ──
+async function fetchCoinPaprikaData(coinId) {
+  try {
+    const r = await fetchWithTimeout(
+      'https://api.coinpaprika.com/v1/tickers/'+coinId+'?quotes=USD',
+      5000
+    );
+    if(!r.ok) return null;
+    const d = await r.json();
+    return {
+      rank:       d.rank,
+      volume24h:  d.quotes?.USD?.volume_24h,
+      mktCap:     d.quotes?.USD?.market_cap,
+      athPrice:   d.quotes?.USD?.ath_price,
+      athDate:    d.quotes?.USD?.ath_date,
+      percentFromAth: d.quotes?.USD?.percent_from_price_ath,
+      beta:       d.beta_value,
+    };
+  } catch { return null; }
+}
+
+// ── Global crypto market from CoinPaprika (no rate limit) ──
+async function fetchGlobalMarket() {
+  try {
+    const r = await fetchWithTimeout('https://api.coinpaprika.com/v1/global', 5000);
+    if(!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+// ── Trending from CoinGecko (separate endpoint, less rate limited) ──
+async function fetchTrendingCoins() {
+  try {
+    const r = await fetchWithTimeout(
+      'https://api.coingecko.com/api/v3/search/trending',
+      5000
+    );
+    if(!r.ok) return [];
+    const d = await r.json();
+    return (d.coins||[]).map(c=>c.item?.symbol).filter(Boolean);
+  } catch { return []; }
+}
 
 async function fetchCoinGecko() {
   for (const url of CG_URLS) {
@@ -2094,6 +2255,245 @@ function deepSell() {
   openSwap(deepToken.addr, deepToken.sym, deepToken.chain, deepToken.name, deepToken.price, deepToken.chg);
   closeDeep();
   setTimeout(()=>setSwapTab('sell'), 150);
+}
+
+
+
+// ══════════════════════════════════════════════════════════
+// TELEGRAM ALERT SYSTEM
+// ══════════════════════════════════════════════════════════
+
+// Track sent alerts to avoid spam
+const _tgSentAlerts = new Set(JSON.parse(localStorage.getItem('rg7_tg_sent')||'[]'));
+const _TG_COOLDOWN = 3600000; // 1 hour per token
+
+async function sendTelegram(message) {
+  if(!TG_CONFIG.enabled || !TG_CONFIG.token || !TG_CONFIG.chatId) return false;
+  try {
+    const url = 'https://api.telegram.org/bot' + TG_CONFIG.token + '/sendMessage';
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        chat_id: TG_CONFIG.chatId,
+        text: message,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      })
+    });
+    const d = await r.json();
+    return d.ok === true;
+  } catch(e) {
+    console.warn('Telegram error:', e.message);
+    return false;
+  }
+}
+
+function formatTgSignal(coin, sig, tech) {
+  const p = coin.current_price;
+  const ps = p<0.000001?'$'+p.toExponential(2):p<0.01?'$'+p.toFixed(6):p<1?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{maximumFractionDigits:2});
+  const emoji = sig.type==='pump'?'🚀':sig.type==='dump'?'📉':sig.type==='rug'?'🚨':'⚠️';
+  const rsiLine  = tech ? 'RSI: <b>'+tech.rsi+'</b> '+( tech.rsi>70?'(Sobrecomprado ⚠️)':tech.rsi<30?'(Sobrevendido 🟢)':'(Neutral)') : '';
+  const macdLine = tech ? 'MACD: <b>'+(tech.macd.trend==='bullish'?'▲ Alcista':'▼ Bajista')+'</b>' : '';
+  const bbLine   = tech ? 'Bollinger: <b>'+tech.bb.position+'%</b>' : '';
+
+  return [
+    emoji+' <b>RADAR G-7 — '+sig.actionSignal+'</b>',
+    '',
+    '🪙 <b>'+coin.symbol?.toUpperCase()+'</b> ('+coin.name+')',
+    '💰 Precio: <b>'+ps+'</b>',
+    '📊 24H: <b>'+(sig.c24h>=0?'+':'')+sig.c24h.toFixed(2)+'%</b>',
+    '⚡ Score: <b>'+sig.scoreNorm+'/100</b>',
+    '',
+    rsiLine, macdLine, bbLine,
+    '',
+    '🎯 <b>'+sig.entryAction+'</b>',
+    sig.type==='rug'?'🚨 RUG PULL RISK — NO ENTRAR':'',
+    '',
+    '🔗 <a href="https://radar-g-7.vercel.app">Ver en RADAR G-7</a>',
+    '⏰ '+new Date().toLocaleTimeString('es-ES'),
+    '',
+    '⚠️ Informativo. No es consejo financiero.',
+  ].filter(l=>l!==undefined&&l!=='').join('\n');
+}
+
+async function checkAndSendTgAlerts() {
+  if(!TG_CONFIG.enabled) return;
+  const now = Date.now();
+
+  // Check top signals
+  const topAlerts = allCoins
+    .map(c=>({c, s:calcSignal(c)}))
+    .filter(({c,s}) => {
+      const key = c.id+'_'+s.type+'_'+Math.floor(now/_TG_COOLDOWN);
+      if(_tgSentAlerts.has(key)) return false;
+      // Only alert on strong signals
+      return (s.type==='rug') ||
+             (s.type==='pump' && s.scoreNorm>=85) ||
+             (s.type==='dump' && s.scoreNorm>=80);
+    })
+    .sort((a,b)=>b.s.scoreNorm-a.s.scoreNorm)
+    .slice(0,3); // max 3 alerts per check
+
+  for(const {c,s} of topAlerts) {
+    const key = c.id+'_'+s.type+'_'+Math.floor(now/_TG_COOLDOWN);
+    // Get real technicals if available
+    const tech = await fetchRealTechnicals(c.symbol).catch(()=>null);
+    const msg  = formatTgSignal(c, s, tech);
+    const sent = await sendTelegram(msg);
+    if(sent) {
+      _tgSentAlerts.add(key);
+      // Keep set small
+      if(_tgSentAlerts.size > 100) {
+        const first = _tgSentAlerts.values().next().value;
+        _tgSentAlerts.delete(first);
+      }
+      localStorage.setItem('rg7_tg_sent', JSON.stringify([..._tgSentAlerts]));
+    }
+    // Small delay between messages
+    await new Promise(res=>setTimeout(res,500));
+  }
+
+  // Portfolio alerts via Telegram
+  portfolio.filter(p=>p.status==='open').forEach(async pos => {
+    const coin = allCoins.find(c=>c.id===pos.id||c.symbol?.toUpperCase()===pos.sym);
+    if(!coin) return;
+    const currentPrice = coin.current_price;
+    const pnlPct = ((currentPrice-pos.entryPrice)/pos.entryPrice)*100;
+    const sig = calcSignal(coin);
+    const portKey = pos.id+'_portfolio_'+Math.floor(now/_TG_COOLDOWN);
+
+    let alertMsg = null;
+
+    if(pos.stop && currentPrice<=pos.stop && !_tgSentAlerts.has(portKey+'_stop')) {
+      alertMsg = [
+        '🛑 <b>STOP-LOSS ALCANZADO</b>',
+        '',
+        '🪙 <b>'+pos.sym+'</b>',
+        '💰 Precio actual: <b>$'+currentPrice.toFixed(6)+'</b>',
+        '📉 P&L: <b>'+(pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'%</b>',
+        '⚠️ Tu stop-loss de $'+pos.stop+' fue alcanzado.',
+        '',
+        '🔴 <b>CONSIDERA VENDER AHORA</b>',
+        '🔗 <a href="https://radar-g-7.vercel.app">Abrir RADAR G-7</a>',
+      ].join('\n');
+      _tgSentAlerts.add(portKey+'_stop');
+    } else if(pos.target && currentPrice>=pos.target && !_tgSentAlerts.has(portKey+'_target')) {
+      alertMsg = [
+        '🎯 <b>TARGET ALCANZADO</b>',
+        '',
+        '🪙 <b>'+pos.sym+'</b>',
+        '💰 Precio actual: <b>$'+currentPrice.toFixed(6)+'</b>',
+        '📈 P&L: <b>+'+pnlPct.toFixed(2)+'%</b>',
+        '✅ Tu target de $'+pos.target+' fue alcanzado.',
+        '',
+        '🟢 <b>CONSIDERA TOMAR GANANCIAS</b>',
+        '🔗 <a href="https://radar-g-7.vercel.app">Abrir RADAR G-7</a>',
+      ].join('\n');
+      _tgSentAlerts.add(portKey+'_target');
+    } else if((sig.type==='dump'||sig.type==='rug') && !_tgSentAlerts.has(portKey+'_dump')) {
+      alertMsg = [
+        '🚨 <b>SEÑAL DE SALIDA — '+sig.label+'</b>',
+        '',
+        '🪙 <b>'+pos.sym+'</b> en tu portfolio',
+        '💰 Precio: <b>$'+currentPrice.toFixed(6)+'</b>',
+        '📊 P&L: <b>'+(pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'%</b>',
+        '⚡ Score RADAR: <b>'+sig.scoreNorm+'/100</b>',
+        '',
+        sig.type==='rug'?'🚨 RUG PULL RISK DETECTADO':'📉 DUMP INMINENTE',
+        '🔗 <a href="https://radar-g-7.vercel.app">Abrir RADAR G-7</a>',
+      ].join('\n');
+      _tgSentAlerts.add(portKey+'_dump');
+    }
+
+    if(alertMsg) {
+      await sendTelegram(alertMsg);
+      localStorage.setItem('rg7_tg_sent', JSON.stringify([..._tgSentAlerts]));
+    }
+  });
+}
+
+// Send test message
+async function testTelegram() {
+  const msg = [
+    '✅ <b>RADAR G-7 conectado correctamente</b>',
+    '',
+    '🛰️ Sistema de alertas activo',
+    '⚡ Recibirás notificaciones cuando:',
+    '  • Score ≥85 PUMP detectado',
+    '  • Score ≥80 DUMP detectado',
+    '  • RUG PULL detectado',
+    '  • Stop-loss o target alcanzado',
+    '',
+    '🔗 <a href="https://radar-g-7.vercel.app">radar-g-7.vercel.app</a>',
+    '⏰ '+new Date().toLocaleString('es-ES'),
+  ].join('\n');
+  const ok = await sendTelegram(msg);
+  return ok;
+}
+
+
+// ══════════════════════════════════════════════════════════
+// REAL TECHNICALS INTEGRATION
+// Uses Binance OHLCV for accurate RSI/MACD/BB
+// ══════════════════════════════════════════════════════════
+
+// Cache for enriched coin data with real technicals
+const _realTechData = new Map();
+
+async function enrichCoinWithTechnicals(coin) {
+  const cached = _realTechData.get(coin.id);
+  if(cached && Date.now()-cached.ts < 60000) return cached.tech;
+
+  const tech = await fetchRealTechnicals(coin.symbol);
+  if(tech) _realTechData.set(coin.id, {tech, ts:Date.now()});
+  return tech;
+}
+
+// Enhanced signal with real technicals
+function calcSignalEnhanced(coin, tech) {
+  const sig = calcSignal(coin);
+  if(!tech) return sig;
+
+  // Override approximated values with real ones
+  sig.rsi = tech.rsi.toString();
+  sig.macdSignal = tech.macd.trend === 'bullish' ?
+    (tech.macd.crossover ? 'bullish_div' : 'bullish') :
+    (tech.macd.crossover ? 'bearish_div' : 'bearish');
+  sig.bbPos = tech.bb.position.toString();
+  sig.bbSqueeze = tech.bb.squeeze;
+  sig.atr = tech.atr;
+  sig.realTech = true;
+
+  // Refine action signal with real RSI
+  const rsiN = tech.rsi;
+  if(rsiN > 75 && sig.type === 'pump') {
+    sig.actionSignal = '⚠️ PUMP con RSI '+rsiN+' — Sobrecomprado, esperar retroceso';
+    sig.actionColor  = 'var(--yellow)';
+    sig.actionUrgency = 'PRECAUCIÓN';
+  } else if(rsiN < 30 && sig.dir === 'down') {
+    sig.actionSignal = '🟢 RSI '+rsiN+' SOBREVENDIDO — Posible rebote';
+    sig.actionColor  = 'var(--green)';
+    sig.actionUrgency = 'OPORTUNIDAD';
+  }
+  if(tech.bb.squeeze) {
+    sig.actionSignal += ' · 📊 BB Squeeze (movimiento fuerte próximo)';
+  }
+  return sig;
+}
+
+// Background technicals loader — runs after main data loads
+async function loadRealTechnicals() {
+  // Load technicals for top 10 tokens by signal strength
+  const top10 = allCoins
+    .map(c=>({c, s:calcSignal(c)}))
+    .sort((a,b)=>b.s.score-a.s.score)
+    .slice(0,10);
+
+  for(const {c} of top10) {
+    await enrichCoinWithTechnicals(c);
+    await new Promise(res=>setTimeout(res,200)); // rate limit friendly
+  }
 }
 
 
@@ -3307,10 +3707,123 @@ async function refreshAll(){
 // ═══════════════════════════════
 // INIT
 // ═══════════════════════════════
+
+// ── TELEGRAM UI FUNCTIONS ──
+function openTgModal() {
+  document.getElementById('tgModal').classList.add('open');
+  // Pre-fill with current config
+  const tkEl = document.getElementById('tgToken');
+  const cidEl = document.getElementById('tgChatId');
+  const enEl  = document.getElementById('tgEnabled');
+  if(tkEl)  tkEl.value   = TG_CONFIG.token   || '';
+  if(cidEl) cidEl.value  = TG_CONFIG.chatId  || '';
+  if(enEl)  enEl.checked = TG_CONFIG.enabled || false;
+  updateTgStatus();
+}
+
+function closeTgModal() {
+  document.getElementById('tgModal').classList.remove('open');
+}
+
+function updateTgStatus() {
+  const dot  = document.getElementById('tgStatusDot');
+  const text = document.getElementById('tgStatusText');
+  if(!dot||!text) return;
+  const sideDot = document.getElementById('tgSideDot');
+  if(TG_CONFIG.enabled && TG_CONFIG.token && TG_CONFIG.chatId) {
+    dot.style.background  = 'var(--green)';
+    dot.style.animation   = 'pulse 1.5s infinite';
+    text.textContent      = '✅ Activo — Alertas enviando a tu Telegram';
+    text.style.color      = 'var(--green)';
+    if(sideDot){ sideDot.style.background='var(--green)'; sideDot.style.animation='pulse 1.5s infinite'; }
+  } else if(TG_CONFIG.token && TG_CONFIG.chatId) {
+    dot.style.background  = 'var(--yellow)';
+    dot.style.animation   = 'none';
+    text.textContent      = '⚠️ Configurado pero desactivado';
+    text.style.color      = 'var(--yellow)';
+  } else {
+    dot.style.background  = 'var(--text3)';
+    dot.style.animation   = 'none';
+    text.textContent      = '❌ Sin configurar';
+    text.style.color      = 'var(--text3)';
+  }
+}
+
+function saveTgConfig() {
+  const token  = SECURITY.sanitize(document.getElementById('tgToken').value.trim());
+  const chatId = SECURITY.sanitize(document.getElementById('tgChatId').value.trim());
+  const enabled = document.getElementById('tgEnabled').checked;
+
+  // Validate token format
+  if(token && !/^\d+:[A-Za-z0-9_-]{35,}$/.test(token)) {
+    alert('⚠️ Token inválido. Debe ser como: 1234567890:AAFxxxxxxxxxx');
+    return;
+  }
+  // Validate chatId
+  if(chatId && !/^-?\d+$/.test(chatId)) {
+    alert('⚠️ Chat ID inválido. Debe ser un número.');
+    return;
+  }
+
+  TG_CONFIG = { token, chatId, enabled };
+  localStorage.setItem('rg7_tg_config', JSON.stringify(TG_CONFIG));
+  updateTgStatus();
+  alert('✅ Configuración guardada. ' + (enabled ? 'Alertas activadas.' : 'Alertas desactivadas.'));
+  closeTgModal();
+}
+
+async function testTgConfig() {
+  const token  = SECURITY.sanitize(document.getElementById('tgToken').value.trim());
+  const chatId = SECURITY.sanitize(document.getElementById('tgChatId').value.trim());
+  if(!token||!chatId) { alert('Completa token y chat ID primero.'); return; }
+
+  // Temp set for test
+  const prev = {...TG_CONFIG};
+  TG_CONFIG  = { token, chatId, enabled:true };
+  const btn  = event.target;
+  btn.textContent = '⏳ Enviando...';
+  btn.disabled    = true;
+
+  const ok = await testTelegram();
+  btn.textContent = '📤 Probar';
+  btn.disabled    = false;
+  TG_CONFIG       = prev;
+
+  if(ok) {
+    alert('✅ Mensaje enviado correctamente a tu Telegram.');
+  } else {
+    alert('❌ Error enviando. Verifica el token y chat ID.');
+  }
+}
+
+function initTgUI() {
+  updateTgStatus();
+  // If already configured, send startup alert
+  if(TG_CONFIG.enabled && TG_CONFIG.token && TG_CONFIG.chatId) {
+    setTimeout(async ()=>{
+      await sendTelegram([
+        '🛰️ <b>RADAR G-7 iniciado</b>',
+        '⚡ Sistema de alertas activo · '+new Date().toLocaleTimeString('es-ES'),
+        '🔗 <a href="https://radar-g-7.vercel.app">radar-g-7.vercel.app</a>',
+      ].join('\n'));
+    }, 2000);
+  }
+}
+
+
 loadData();
-setInterval(loadData,45000); // 45s — optimal for free CoinGecko tier
+setInterval(loadData,45000)
 setInterval(checkPositionSignals, 30000);
 setInterval(oracleSelfLearn, 30000);
+
+// Telegram alerts every 5 minutes
+setInterval(checkAndSendTgAlerts, 300000);
+
+// Load real technicals in background after 3s
+setTimeout(loadRealTechnicals, 3000);
+
+// Init Telegram UI
+initTgUI();
 
 // ══════════════════════════════════════════════════════
 // PORTFOLIO — Seguimiento de posiciones + señales salida
@@ -4101,6 +4614,57 @@ async function refreshPortfolio() {
   </div>
 </div>
 
+
+<!-- TELEGRAM SETTINGS MODAL -->
+<div class="swap-overlay" id="tgModal" onclick="if(event.target===this)closeTgModal()">
+  <div class="tg-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800">📱 Telegram Alerts</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Recibe señales en tu teléfono</div>
+      </div>
+      <span onclick="closeTgModal()" style="color:var(--text3);font-size:20px;cursor:pointer">✕</span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <!-- Status indicator -->
+      <div id="tgStatus" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px">
+        <div id="tgStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
+        <span id="tgStatusText" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">Sin configurar</span>
+      </div>
+
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px">TOKEN DEL BOT</div>
+        <input class="tg-field" id="tgToken" type="password" placeholder="1234567890:AAFxxxxxxxxxx" value=""/>
+        <button onclick="document.getElementById('tgToken').type=document.getElementById('tgToken').type==='password'?'text':'password'" style="font-size:9px;color:var(--text3);background:none;border:none;cursor:pointer;margin-top:3px">👁 Mostrar/ocultar</button>
+      </div>
+
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px">CHAT ID</div>
+        <input class="tg-field" id="tgChatId" type="text" placeholder="6524529867" value=""/>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px">
+        <input type="checkbox" id="tgEnabled" style="width:16px;height:16px;cursor:pointer"/>
+        <label for="tgEnabled" style="font-size:12px;cursor:pointer">Alertas activas</label>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:11px 13px;font-size:10px;color:var(--text3);line-height:1.7">
+        📢 <strong>Alertas que recibirás:</strong><br>
+        🚀 PUMP Score ≥85 · 📉 DUMP Score ≥80<br>
+        🚨 RUG PULL detectado · 🛑 Stop-loss alcanzado<br>
+        🎯 Target alcanzado en tu portfolio
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="saveTgConfig()" style="flex:1;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer">💾 Guardar</button>
+        <button onclick="testTgConfig()" style="flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:7px;font-size:12px;cursor:pointer">📤 Probar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- DEEP ANALYSIS MODAL -->
 <div class="deep-overlay" id="deepOverlay" onclick="if(event.target===this)closeDeep()">
